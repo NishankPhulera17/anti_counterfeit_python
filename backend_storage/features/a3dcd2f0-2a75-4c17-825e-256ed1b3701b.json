@@ -1,0 +1,14 @@
+{
+  "cdp_id": "a3dcd2f0-2a75-4c17-825e-256ed1b3701b",
+  "product_id": "PRODUCT123",
+  "serial_id": "ed8973da-17a0-44d0-91d0-2cb9e0fef094",
+  "features": {
+    "freq_low": 0.999435544013977,
+    "freq_medium_low": 9.332718036603183e-05,
+    "freq_medium": 0.0001181355255539529,
+    "freq_medium_high": 0.00016355466505046934,
+    "freq_high": 0.000189249447430484,
+    "freq_low_to_medium": 8389.063961961227,
+    "freq_medium_to_high": 0.620950689473718,
+    "freq_medium_high_to_high": 0.8596853618207287,
+    "freq_total_high_freq_ratio": 
