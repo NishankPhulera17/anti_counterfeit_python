@@ -2,6 +2,8 @@ from flask import Flask, request, jsonify
 from services import cdp_service, liveness_service
 from services.feature_extraction import extract_all_features, compare_features
 from services.backend_storage import get_backend_storage
+from services.metric_extraction import extract_all_metrics
+from services.training_data_collector import append_to_training_csv
 from utils.image_utils import base64_to_image, decode_qr_code, analyze_image_statistics
 from dotenv import load_dotenv
 import numpy as np
@@ -197,6 +199,11 @@ def verify_cdp():
     cdp_base64 = data.get('cdp_image')
     video_frames_base64 = data.get('video_frames', [])
     
+    # Extract optional parameters for training data collection
+    label_condition = data.get('label_condition')  # Optional: "real" or "duplicate"
+    lighting_condition = data.get('lighting_condition')  # Optional: "bright", "normal", "dim", "low"
+    request_product_id = data.get('product_id')  # Optional: product_id from request
+    
     # Require video frames for basic liveness (static screenshot detection)
     if not video_frames_base64 or len(video_frames_base64) < 2:
         return jsonify({
@@ -304,13 +311,22 @@ def verify_cdp():
             "message": "Failed to extract CDP region from scanned image"
         }), 400
     
-    # Extract features from scanned CDP
+    # Extract features from scanned CDP (for verification)
     scanned_features = extract_all_features(scanned_cdp)
     if not scanned_features:
         return jsonify({
             "status": "failed",
             "message": "Failed to extract features from scanned CDP"
         }), 500
+    
+    # Extract all 15 metrics for ML training (if label_condition is provided)
+    training_metrics = None
+    if label_condition is not None:
+        try:
+            training_metrics = extract_all_metrics(scanned_cdp)
+            print(f"[INFO] Extracted training metrics for label: {label_condition}", flush=True)
+        except Exception as e:
+            print(f"[WARNING] Failed to extract training metrics: {str(e)}", flush=True)
     
     # Step 5: Compare features using scored classification
     similarity_score = compare_features(reference_features, scanned_features)
@@ -524,6 +540,38 @@ def verify_cdp():
             'warnings': size_assessment['warnings']
         }
     }
+    
+    # Append optional parameters from request body to response
+    if label_condition is not None:
+        response['label_condition'] = str(label_condition)
+    if lighting_condition is not None:
+        response['lighting_condition'] = str(lighting_condition)
+    if request_product_id is not None:
+        response['request_product_id'] = str(request_product_id)
+    
+    # Add training metrics to response if extracted
+    if training_metrics is not None:
+        response['training_metrics'] = training_metrics
+    
+    # Append to training CSV if label_condition is provided (training data collection)
+    if label_condition is not None and training_metrics is not None:
+        # Use provided lighting_condition or default to 'normal'
+        lighting = lighting_condition if lighting_condition is not None else 'normal'
+        
+        # Append to CSV
+        csv_saved = append_to_training_csv(
+            metrics=training_metrics,
+            lighting_condition=lighting,
+            label=label_condition,
+            csv_path="training_data/sample_data.csv"
+        )
+        
+        if csv_saved:
+            response['training_data_saved'] = True
+            print(f"[INFO] Training data saved: label={label_condition}, lighting={lighting}", flush=True)
+        else:
+            response['training_data_saved'] = False
+            response['training_data_error'] = "Failed to save training data to CSV"
 
     return jsonify(response)
 
