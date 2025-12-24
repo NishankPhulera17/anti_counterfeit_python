@@ -1,0 +1,40 @@
+Digital image - 
+
+  Sharpness (Laplacian): 107.54 (threshold=100)
+  Contrast: 84.59
+  Histogram peak: 0.096
+  Edge density: 0.0230
+  Edge strength (mean): 23.57
+  Noise level: 2.00
+  High frequency energy: 40162258944.00
+  Color diversity: 0.0003
+  Unique colors: 2519
+  Saturation (mean): 41.02
+  Texture uniformity: 0.0593
+  Compression artifacts: 167.03
+  Histogram entropy: 6.35
+  Dynamic range: 254.00
+  Brightness: 70.93
+  Quality score: 1.000
+  Quality OK: True
+
+
+  Original image - 
+
+  Sharpness (Laplacian): 29.39 (threshold=100)
+  Contrast: 41.01
+  Histogram peak: 0.014
+  Edge density: 0.0048
+  Edge strength (mean): 15.31
+  Noise level: 3.00
+  High frequency energy: 25979375616.00
+  Color diversity: 0.0001
+  Unique colors: 451
+  Saturation (mean): 28.85
+  Texture uniformity: 0.0282
+  Compression artifacts: 41.57
+  Histogram entropy: 7.09
+  Dynamic range: 219.00
+  Brightness: 160.87
+  Quality score: 0.718
+  Quality OK: False

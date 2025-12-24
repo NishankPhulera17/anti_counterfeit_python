@@ -319,14 +319,14 @@ def verify_cdp():
             "message": "Failed to extract features from scanned CDP"
         }), 500
     
-    # Extract all 15 metrics for ML training (if label_condition is provided)
+    # Extract all 15 metrics for ML training (always extract for data collection)
     training_metrics = None
-    if label_condition is not None:
-        try:
-            training_metrics = extract_all_metrics(scanned_cdp)
-            print(f"[INFO] Extracted training metrics for label: {label_condition}", flush=True)
-        except Exception as e:
-            print(f"[WARNING] Failed to extract training metrics: {str(e)}", flush=True)
+    try:
+        training_metrics = extract_all_metrics(scanned_cdp)
+        print(f"[METRICS] Training metrics for serial_id={serial_id}: {training_metrics}", flush=True)
+        print(f"[INFO] Extracted training metrics", flush=True)
+    except Exception as e:
+        print(f"[WARNING] Failed to extract training metrics: {str(e)}", flush=True)
     
     # Step 5: Compare features using scored classification
     similarity_score = compare_features(reference_features, scanned_features)
@@ -399,17 +399,18 @@ def verify_cdp():
     print(f"[INFO] Scanned image saved with product_id: {scanned_image_path_with_product}", flush=True)
     
     # Load reference CDP from folder (try CMYK TIFF first, then PNG fallback)
-    # Files are saved as: {product_id}_{size}.tiff and {product_id}_{size}.png
-    # e.g., PRODUCT123_28x14.tiff, PRODUCT123_28x14.png, etc.
+    # Files are saved as: {cdp_id}_{size}.tiff and {cdp_id}_{size}.png
+    # e.g., 495f8081-906a-48d8-9ea5-412a1da549a6_28x14.tiff, etc.
+    print(f"[DEBUG] Starting reference CDP loading for product_id: {product_id}, cdp_id: {cdp_id}", flush=True)
     import glob
     
-    # Try to find files with size suffix pattern: {product_id}_*.tiff or {product_id}_*.png
-    cmyk_tiff_pattern = os.path.join(CDP_DIR, f"{product_id}_*.tiff")
-    png_pattern = os.path.join(CDP_DIR, f"{product_id}_*.png")
+    # Try to find files with size suffix pattern: {cdp_id}_*.tiff or {cdp_id}_*.png
+    cmyk_tiff_pattern = os.path.join(CDP_DIR, f"{cdp_id}_*.tiff")
+    png_pattern = os.path.join(CDP_DIR, f"{cdp_id}_*.png")
     
     # Also try exact match without size suffix (for backward compatibility)
-    cmyk_tiff_path = os.path.join(CDP_DIR, f"{product_id}.tiff")
-    png_path = os.path.join(CDP_DIR, f"{product_id}.png")
+    cmyk_tiff_path = os.path.join(CDP_DIR, f"{cdp_id}.tiff")
+    png_path = os.path.join(CDP_DIR, f"{cdp_id}.png")
     
     ref_cdp_path = None
     ref_img = None
@@ -458,7 +459,7 @@ def verify_cdp():
                 'cdp_score': 0, 
                 'liveness_passed': False,
                 'status': 'failed',
-                'message': f'Reference CDP not found for product_id: {product_id} (checked {product_id}.tiff, {product_id}.png, and pattern {product_id}_*.tiff/png)'
+                'message': f'Reference CDP not found for cdp_id: {cdp_id} (checked {cdp_id}.tiff, {cdp_id}.png, and pattern {cdp_id}_*.tiff/png)'
             })
     
     if ref_img is None:
@@ -466,7 +467,7 @@ def verify_cdp():
             'cdp_score': 0, 
             'liveness_passed': False,
             'status': 'failed',
-            'message': f'Failed to load reference CDP for product_id: {product_id}'
+            'message': f'Failed to load reference CDP for cdp_id: {cdp_id}'
         })
     
     # Extract and save scanned CDP region to extracted_cdp folder
@@ -480,22 +481,79 @@ def verify_cdp():
     print(f"[INFO] Extracted CDP saved: {os.path.join(EXTRACTED_CDP_DIR, extracted_cdp_filename)}", flush=True)
     
     # Compare CDP images
-    cdp_score = cdp_service.compare_cdp(cdp_img, ref_img)
+    cdp_score = 0.0
+    try:
+        print(f"[INFO] Comparing CDP images...", flush=True)
+        cdp_score = cdp_service.compare_cdp(cdp_img, ref_img)
+        print(f"[INFO] CDP comparison score: {cdp_score:.3f}", flush=True)
+    except Exception as e:
+        print(f"[ERROR] Failed to compare CDP images: {str(e)}", flush=True)
+        import traceback
+        traceback.print_exc()
 
     # Enhanced liveness check with video frames (detects screens, photocopies, static images)
-    first_frame = video_frames[0]
-    liveness_passed = liveness_service.liveness_check(first_frame, video_frames)
+    # Note: liveness_passed was already calculated earlier, but we're re-running for additional checks
+    liveness_passed_secondary = False
+    try:
+        print(f"[INFO] Running secondary liveness check...", flush=True)
+        first_frame = video_frames[0] if video_frames else None
+        if first_frame is not None:
+            liveness_passed_secondary = liveness_service.liveness_check(first_frame, video_frames)
+            print(f"[INFO] Secondary liveness check result: {liveness_passed_secondary}", flush=True)
+        else:
+            print(f"[WARNING] No video frames available for secondary liveness check", flush=True)
+    except Exception as e:
+        print(f"[ERROR] Failed to run secondary liveness check: {str(e)}", flush=True)
+        import traceback
+        traceback.print_exc()
+        first_frame = video_frames[0] if video_frames else None
     
     # Check frame distance
-    distance_check = liveness_service.check_scanning_frame_distance(first_frame)
+    distance_check = {'has_warnings': False, 'warnings': [], 'frame_info': {}}
+    try:
+        print(f"[INFO] Checking frame distance...", flush=True)
+        if first_frame is not None:
+            distance_check = liveness_service.check_scanning_frame_distance(first_frame)
+            print(f"[INFO] Frame distance check completed", flush=True)
+    except Exception as e:
+        print(f"[ERROR] Failed to check frame distance: {str(e)}", flush=True)
+        import traceback
+        traceback.print_exc()
     
     # Assess lighting conditions and generate warnings
-    lighting_assessment = liveness_service.assess_lighting_conditions(first_frame)
+    lighting_assessment = {'has_warnings': False, 'has_critical_warnings': False, 'warnings': [], 'lighting_info': {}}
+    try:
+        print(f"[INFO] Assessing lighting conditions...", flush=True)
+        if first_frame is not None:
+            lighting_assessment = liveness_service.assess_lighting_conditions(first_frame)
+            print(f"[INFO] Lighting assessment completed", flush=True)
+    except Exception as e:
+        print(f"[ERROR] Failed to assess lighting conditions: {str(e)}", flush=True)
+        import traceback
+        traceback.print_exc()
     
     # Detect CDP/pattern size (using red border detection) for warnings
-    size_assessment = liveness_service.detect_qr_code_size(first_frame)
+    size_assessment = {'has_warnings': False, 'warnings': [], 'size_info': {}}
+    try:
+        print(f"[INFO] Detecting CDP/pattern size...", flush=True)
+        if first_frame is not None:
+            size_assessment = liveness_service.detect_qr_code_size(first_frame)
+            print(f"[INFO] Size assessment completed", flush=True)
+    except Exception as e:
+        print(f"[ERROR] Failed to detect CDP/pattern size: {str(e)}", flush=True)
+        import traceback
+        traceback.print_exc()
     
-    print(f"[INFO] Verification result: authentic={is_authentic}, score={similarity_score:.3f}, threshold={AUTHENTICITY_THRESHOLD}, liveness={liveness_passed}", flush=True)
+    # Print verification result (using variables from earlier in the function)
+    # Note: similarity_score, AUTHENTICITY_THRESHOLD, and is_authentic were calculated earlier (around lines 333-346)
+    # liveness_passed was also calculated earlier, but we have a secondary check result too
+    try:
+        # These variables should be in scope from earlier in the function
+        print(f"[INFO] Verification result: authentic={is_authentic}, score={similarity_score:.3f}, threshold={AUTHENTICITY_THRESHOLD}, liveness={liveness_passed}", flush=True)
+    except NameError as e:
+        # Fallback if variables not in scope (shouldn't happen, but just in case)
+        print(f"[WARNING] Could not access verification variables: {str(e)}", flush=True)
+        print(f"[INFO] Secondary checks completed: cdp_score={cdp_score:.3f}, liveness_secondary={liveness_passed_secondary}", flush=True)
     
     # Build response
     response = {
@@ -553,23 +611,27 @@ def verify_cdp():
     if training_metrics is not None:
         response['training_metrics'] = training_metrics
     
-    # Append to training CSV if label_condition is provided (training data collection)
-    if label_condition is not None and training_metrics is not None:
-        # Use provided lighting_condition or default to 'normal'
-        lighting = lighting_condition if lighting_condition is not None else 'normal'
+    # Append to training CSV on every verify call (for data collection)
+    print(f"[DEBUG] About to save training CSV. training_metrics is None: {training_metrics is None}", flush=True)
+    if training_metrics is not None:
+        # Use provided label_condition or default to 'unknown'
+        label = label_condition if label_condition is not None else 'unknown'
+        # Use provided lighting_condition or detected lighting status
+        lighting = lighting_condition if lighting_condition is not None else lighting_assessment['lighting_info'].get('status', 'normal')
         
         # Append to CSV
         csv_saved = append_to_training_csv(
             metrics=training_metrics,
             lighting_condition=lighting,
-            label=label_condition,
+            label=label,
             csv_path="training_data/sample_data.csv"
         )
         
         if csv_saved:
             response['training_data_saved'] = True
-            print(f"[INFO] Training data saved: label={label_condition}, lighting={lighting}", flush=True)
+            print(f"[INFO] Training data saved: label={label}, lighting={lighting}", flush=True)
         else:
+            print(f"[INFO] Training data not saved: label={label}, lighting={lighting}", flush=True)
             response['training_data_saved'] = False
             response['training_data_error'] = "Failed to save training data to CSV"
 

@@ -189,12 +189,159 @@ def detect_cdp_region_by_texture(image, qr_rightmost_x, qr_width, padding=20):
     return cdp_start, cdp_end
 
 
+def straighten_perspective(image):
+    """
+    Straighten an image by detecting the red border corners and applying perspective correction.
+    This corrects for perspective distortion (tilted/angled images).
+    
+    Args:
+        image: Input image with red border (may be distorted)
+    
+    Returns:
+        Straightened image, or original image if correction fails
+    """
+    h, w = image.shape[:2]
+    
+    # Detect red border to find corners
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    
+    # Define red color range in HSV
+    lower_red1 = np.array([0, 100, 100])
+    upper_red1 = np.array([10, 255, 255])
+    lower_red2 = np.array([170, 100, 100])
+    upper_red2 = np.array([180, 255, 255])
+    
+    mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
+    mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
+    mask = cv2.bitwise_or(mask1, mask2)
+    
+    # Apply morphological operations to clean up the mask
+    kernel = np.ones((5, 5), np.uint8)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=2)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_DILATE, kernel, iterations=1)
+    
+    # Find contours
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if not contours:
+        print("[WARNING] No red border found for perspective correction, using original image")
+        return image
+    
+    # Filter contours by area (similar to detect_yellow_border)
+    image_area = h * w
+    min_area = image_area * 0.05
+    max_area = image_area * 0.95
+    
+    valid_contours = []
+    for contour in contours:
+        area = cv2.contourArea(contour)
+        if min_area <= area <= max_area:
+            x, y, cw, ch = cv2.boundingRect(contour)
+            aspect_ratio = max(cw, ch) / max(min(cw, ch), 1)
+            if 1.2 <= aspect_ratio <= 3.0:
+                rect_area = cw * ch
+                extent = area / max(rect_area, 1)
+                if extent > 0.7:
+                    valid_contours.append((contour, area, extent))
+    
+    if not valid_contours:
+        largest_contour = max(contours, key=cv2.contourArea)
+    else:
+        best_contour = max(valid_contours, key=lambda x: x[1] * x[2])[0]
+        largest_contour = best_contour
+    
+    # Approximate the contour to get corner points
+    epsilon = 0.02 * cv2.arcLength(largest_contour, True)
+    approx = cv2.approxPolyDP(largest_contour, epsilon, True)
+    
+    # Find 4 corner points
+    if len(approx) >= 4:
+        # Use the approximated points
+        points = approx.reshape(-1, 2).astype(np.float32)
+    else:
+        # Use convex hull to find corners
+        hull = cv2.convexHull(largest_contour)
+        if len(hull) < 4:
+            print("[WARNING] Could not find 4 corners from contour, using original image")
+            return image
+        points = hull.reshape(-1, 2).astype(np.float32)
+    
+    # Find the 4 extreme corner points
+    # Top-left: smallest sum of x+y
+    # Top-right: smallest difference of x-y (or largest x, smallest y)
+    # Bottom-right: largest sum of x+y
+    # Bottom-left: largest difference of x-y (or smallest x, largest y)
+    sums = points.sum(axis=1)
+    diffs = points[:, 0] - points[:, 1]  # x - y
+    
+    # Get indices for corners
+    top_left_idx = np.argmin(sums)
+    bottom_right_idx = np.argmax(sums)
+    top_right_idx = np.argmin(diffs)
+    bottom_left_idx = np.argmax(diffs)
+    
+    # Ensure we have 4 distinct points
+    corner_indices = [top_left_idx, top_right_idx, bottom_right_idx, bottom_left_idx]
+    if len(set(corner_indices)) < 4:
+        # If we have duplicate indices, use bounding box corners as fallback
+        x, y, rect_w, rect_h = cv2.boundingRect(largest_contour)
+        src_points = np.array([
+            [x, y],                      # top-left
+            [x + rect_w, y],            # top-right
+            [x + rect_w, y + rect_h],    # bottom-right
+            [x, y + rect_h]             # bottom-left
+        ], dtype=np.float32)
+    else:
+        src_points = np.array([
+            points[top_left_idx],
+            points[top_right_idx],
+            points[bottom_right_idx],
+            points[bottom_left_idx]
+        ], dtype=np.float32)
+    
+    # Calculate destination points (straightened rectangle)
+    # Use the average width and height from corner distances for better accuracy
+    width_top = np.linalg.norm(src_points[1] - src_points[0])
+    width_bottom = np.linalg.norm(src_points[2] - src_points[3])
+    height_left = np.linalg.norm(src_points[3] - src_points[0])
+    height_right = np.linalg.norm(src_points[2] - src_points[1])
+    
+    # Use average dimensions
+    avg_width = int((width_top + width_bottom) / 2)
+    avg_height = int((height_left + height_right) / 2)
+    
+    # Ensure minimum size
+    if avg_width < 50 or avg_height < 50:
+        print("[WARNING] Calculated dimensions too small, using original image")
+        return image
+    
+    # Destination points (straight rectangle)
+    dst_points = np.array([
+        [0, 0],                    # top-left
+        [avg_width, 0],            # top-right
+        [avg_width, avg_height],   # bottom-right
+        [0, avg_height]            # bottom-left
+    ], dtype=np.float32)
+    
+    # Calculate perspective transform matrix
+    M = cv2.getPerspectiveTransform(src_points, dst_points)
+    
+    # Apply perspective transform
+    straightened = cv2.warpPerspective(image, M, (avg_width, avg_height), 
+                                       flags=cv2.INTER_LINEAR,
+                                       borderMode=cv2.BORDER_CONSTANT,
+                                       borderValue=(0, 0, 0))
+    
+    print(f"[INFO] Perspective correction applied: original size={image.shape[:2]}, straightened size={straightened.shape[:2]}")
+    
+    return straightened
+
+
 def extract_cdp_region(combined_image, save_file=True, output_dir=None, custom_filename=None):
     """
     Extracts the CDP region from a horizontally combined QR+CDP image.
     The image structure: [Red Border][QR Code (left)][Padding][CDP (right, square)][Red Border]
     CDP is square and has the same height as the image.
-    Detects red border automatically, then extracts the square CDP from the right side.
+    Detects red border automatically, straightens perspective if needed, then extracts the square CDP from the right side.
     Optionally saves extracted CDP image to disk.
     
     Args:
@@ -203,8 +350,12 @@ def extract_cdp_region(combined_image, save_file=True, output_dir=None, custom_f
         output_dir: Custom directory to save to (default: EXTRACTED_CDP_DIR)
         custom_filename: Custom filename (default: auto-generated with timestamp)
     """
-    # Crop to red border first - this ensures we work with the correct region
-    cropped = detect_yellow_border(combined_image)
+    # Apply perspective correction first to straighten the image
+    # This detects the red border corners and straightens the entire image
+    straightened = straighten_perspective(combined_image)
+    
+    # Then crop to the red border region (now it's a simple rectangular crop since image is straightened)
+    cropped = detect_yellow_border(straightened)
 
     # Save the cropped red border image to 'cropped_qr_cdp' folder
     save_cropped_dir = "cropped_qr_cdp"
@@ -225,6 +376,29 @@ def extract_cdp_region(combined_image, save_file=True, output_dir=None, custom_f
         cropped = combined_image
 
     h, w = cropped.shape[:2]
+    
+    # Handle vertical images: if image is taller than wide, rotate to landscape
+    if h > w:
+        print(f"[INFO] Vertical image detected ({w}x{h}), rotating 90° counter-clockwise")
+        cropped = cv2.rotate(cropped, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        h, w = cropped.shape[:2]
+        print(f"[INFO] After rotation: ({w}x{h})")
+    
+    # Ensure QR code is on the left side by checking variance of left vs right halves
+    # QR code has higher variance (black/white patterns) than CDP
+    gray_check = cv2.cvtColor(cropped, cv2.COLOR_BGR2GRAY)
+    left_half = gray_check[:, :w // 2]
+    right_half = gray_check[:, w // 2:]
+    left_variance = np.var(left_half)
+    right_variance = np.var(right_half)
+    print(f"[INFO] Variance check: left={left_variance:.2f}, right={right_variance:.2f}")
+    
+    if right_variance > left_variance * 1.2:
+        # QR code appears to be on the right, rotate 180° to put it on left
+        print(f"[INFO] QR code detected on right side (variance {right_variance:.2f} > {left_variance:.2f}), rotating 180°")
+        cropped = cv2.rotate(cropped, cv2.ROTATE_180)
+        # Re-validate dimensions after rotation (should be same for 180°)
+        h, w = cropped.shape[:2]
     
     # CDP is square and has the same height as the image
     # The structure is: [QR Code (left)][Padding][CDP (right, square)]

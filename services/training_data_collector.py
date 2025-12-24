@@ -19,14 +19,22 @@ def append_to_training_csv(metrics: Dict[str, float],
         metrics: Dictionary with all 15 metrics
         lighting_condition: Lighting condition ("bright", "normal", "dim", "low")
         label: Label ("real" or "duplicate")
-        csv_path: Path to CSV file
+        csv_path: Path to CSV file (relative or absolute)
     
     Returns:
         True if successful, False otherwise
     """
     try:
+        # Resolve path relative to project root if it's a relative path
+        if not os.path.isabs(csv_path):
+            # Get the project root (parent of services directory)
+            project_root = Path(__file__).parent.parent
+            csv_path = os.path.join(project_root, csv_path)
+        
         # Ensure directory exists
-        os.makedirs(os.path.dirname(csv_path) if os.path.dirname(csv_path) else '.', exist_ok=True)
+        csv_dir = os.path.dirname(csv_path)
+        if csv_dir:
+            os.makedirs(csv_dir, exist_ok=True)
         
         # Prepare row data
         row_data = {
@@ -61,11 +69,13 @@ def append_to_training_csv(metrics: Dict[str, float],
             df = pd.DataFrame([row_data])
             df.to_csv(csv_path, index=False)
         
-        print(f"[INFO] Training data appended to {csv_path}")
+        print(f"[INFO] Training data appended to {csv_path}", flush=True)
+        print(f"[INFO] CSV file exists: {os.path.exists(csv_path)}, size: {os.path.getsize(csv_path) if os.path.exists(csv_path) else 0} bytes", flush=True)
         return True
         
     except Exception as e:
-        print(f"[ERROR] Failed to append training data: {str(e)}")
+        print(f"[ERROR] Failed to append training data: {str(e)}", flush=True)
+        print(f"[ERROR] CSV path attempted: {csv_path}", flush=True)
         import traceback
         traceback.print_exc()
         return False
