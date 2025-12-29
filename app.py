@@ -51,74 +51,63 @@ def generate_qr_cdp_endpoint():
         # Generate unique CDP ID (cryptographically random)
         cdp_id = str(uuid.uuid4())
         
-        # Size configurations: (width_mm, height_mm, dpi, size_name)
-        SIZE_CONFIGS = [
-            (28, 14, 2400, "28x14"),
-            (40, 20, 2400, "40x20"),
-            (50, 25, 2400, "50x25"),
-        ]
+        # Generate only 28x14mm size
+        width_mm, height_mm, dpi, size_name = 28, 14, 2400, "28x14"
         
-        generated_images = {}
-        reference_features = None  # Store features from first size
+        print(f"[INFO] Generating {size_name} QR+CDP for product {product_id}, serial {serial_id}...", flush=True)
         
-        # Generate QR+CDP images in all 3 sizes
-        for width_mm, height_mm, dpi, size_name in SIZE_CONFIGS:
-            print(f"[INFO] Generating {size_name} QR+CDP for product {product_id}, serial {serial_id}...", flush=True)
+        try:
+            # Generate QR+CDP image
+            # QR encodes serial_id (pointer), CDP is random
+            img, generated_cdp_id = generate_qr_cdp(
+                serial_id=serial_id,  # QR encodes serial_id, not product_id
+                qr_size=None,  # Auto-calculate based on physical size and DPI
+                cdp_size=None,  # Auto-calculate based on physical size and DPI
+                padding=20,
+                border_thickness=25,
+                physical_size_mm=(width_mm, height_mm),
+                dpi=dpi,
+                size_suffix=size_name,  # Add size suffix to filename
+                cdp_id=cdp_id
+            )
             
+            if img is None:
+                print(f"[ERROR] generate_qr_cdp returned None for {size_name}", flush=True)
+                raise ValueError(f"Failed to generate QR+CDP image for {size_name}")
+            
+            # Convert image to Base64 to send to app
             try:
-                # Generate QR+CDP image for this size
-                # QR encodes serial_id (pointer), CDP is random
-                img, generated_cdp_id = generate_qr_cdp(
-                    serial_id=serial_id,  # QR encodes serial_id, not product_id
-                    qr_size=None,  # Auto-calculate based on physical size and DPI
-                    cdp_size=None,  # Auto-calculate based on physical size and DPI
-                    padding=20,
-                    border_thickness=25,
-                    physical_size_mm=(width_mm, height_mm),
-                    dpi=dpi,
-                    size_suffix=size_name,  # Add size suffix to filename
-                    cdp_id=cdp_id  # Use same CDP ID for all sizes
-                )
-                
-                if img is None:
-                    print(f"[ERROR] generate_qr_cdp returned None for {size_name}", flush=True)
-                    raise ValueError(f"Failed to generate QR+CDP image for {size_name}")
-                
-                # Convert image to Base64 to send to app
-                try:
-                    img_base64 = cv2_to_base64(img)
-                    if not img_base64:
-                        raise ValueError(f"Failed to convert image to base64 for {size_name}")
-                    generated_images[size_name] = img_base64
-                    print(f"[INFO] Successfully converted {size_name} image to base64", flush=True)
-                except Exception as e:
-                    print(f"[ERROR] Failed to convert {size_name} image to base64: {str(e)}", flush=True)
-                    raise
-                
-                # Extract and store features from CDP (use first size as reference)
-                if reference_features is None:
-                    # Load the generated CDP for feature extraction
-                    cdp_path = os.path.join(CDP_DIR, f"{cdp_id}_{size_name}.png")
-                    if os.path.exists(cdp_path):
-                        cdp_img = cv2.imread(cdp_path)
-                        if cdp_img is not None:
-                            # Extract features (not storing raw image)
-                            reference_features = extract_all_features(cdp_img)
-                            print(f"[INFO] Extracted features from {size_name} CDP", flush=True)
-                            
-                            # Store features in backend
-                            backend.store_cdp_features(
-                                cdp_id=cdp_id,
-                                product_id=product_id,
-                                features=reference_features,
-                                serial_id=serial_id
-                            )
-                            print(f"[INFO] Stored CDP features in backend: cdp_id={cdp_id}, serial_id={serial_id}", flush=True)
+                img_base64 = cv2_to_base64(img)
+                if not img_base64:
+                    raise ValueError(f"Failed to convert image to base64 for {size_name}")
+                print(f"[INFO] Successfully converted {size_name} image to base64", flush=True)
             except Exception as e:
-                print(f"[ERROR] Error generating {size_name} QR+CDP: {str(e)}", flush=True)
-                import traceback
-                traceback.print_exc()
+                print(f"[ERROR] Failed to convert {size_name} image to base64: {str(e)}", flush=True)
                 raise
+            
+            # Extract and store features from CDP
+            reference_features = None
+            cdp_path = os.path.join(CDP_DIR, f"{cdp_id}_{size_name}.png")
+            if os.path.exists(cdp_path):
+                cdp_img = cv2.imread(cdp_path)
+                if cdp_img is not None:
+                    # Extract features (not storing raw image)
+                    reference_features = extract_all_features(cdp_img)
+                    print(f"[INFO] Extracted features from {size_name} CDP", flush=True)
+                    
+                    # Store features in backend
+                    backend.store_cdp_features(
+                        cdp_id=cdp_id,
+                        product_id=product_id,
+                        features=reference_features,
+                        serial_id=serial_id
+                    )
+                    print(f"[INFO] Stored CDP features in backend: cdp_id={cdp_id}, serial_id={serial_id}", flush=True)
+        except Exception as e:
+            print(f"[ERROR] Error generating {size_name} QR+CDP: {str(e)}", flush=True)
+            import traceback
+            traceback.print_exc()
+            raise
 
         # Generate QR token (JWT) - now uses serial_id
         try:
@@ -133,34 +122,26 @@ def generate_qr_cdp_endpoint():
             raise
 
         try:
-            # Check if all images were generated
-            if len(generated_images) != 3:
-                raise ValueError(f"Expected 3 images, got {len(generated_images)}")
-            
-            # Validate base64 strings are not empty
-            for size_name, img_base64 in generated_images.items():
-                if not img_base64 or len(img_base64) == 0:
-                    raise ValueError(f"Empty base64 string for {size_name}")
-                print(f"[INFO] {size_name} base64 length: {len(img_base64)}", flush=True)
+            # Validate base64 string is not empty
+            if not img_base64 or len(img_base64) == 0:
+                raise ValueError(f"Empty base64 string for {size_name}")
+            print(f"[INFO] {size_name} base64 length: {len(img_base64)}", flush=True)
             
             response_data = {
                 "status": "success",
-                "message": f"QR+CDP generated successfully in all 3 sizes for product {product_id}",
+                "message": f"QR+CDP generated successfully for product {product_id}",
                 "serial_id": serial_id,  # Return serial_id for reference
                 "cdp_id": cdp_id,  # Return cdp_id for reference
                 "qrToken": qr_token,
-                "qrCdpImages": {
-                    "28x14": generated_images.get("28x14"),
-                    "40x20": generated_images.get("40x20"),
-                    "50x25": generated_images.get("50x25")
-                },
-                "sizes": {
-                    "28x14": {"width_mm": 28, "height_mm": 14, "dpi": 2400},
-                    "40x20": {"width_mm": 40, "height_mm": 20, "dpi": 2400},
-                    "50x25": {"width_mm": 50, "height_mm": 25, "dpi": 2400}
+                "qrCdpImage": img_base64,
+                "size": {
+                    "width_mm": width_mm,
+                    "height_mm": height_mm,
+                    "dpi": dpi,
+                    "size_name": size_name
                 }
             }
-            print(f"[INFO] Preparing response with {len(generated_images)} images", flush=True)
+            print(f"[INFO] Preparing response with QR+CDP image", flush=True)
             
             # Try to serialize to check for issues
             import json
@@ -558,6 +539,7 @@ def verify_cdp():
     # Build response
     response = {
         'similarity_score': float(similarity_score),
+        'cdp_score': float(cdp_score),
         'threshold': float(AUTHENTICITY_THRESHOLD),
         'liveness_passed': bool(liveness_passed),
         'is_authentic': bool(is_authentic),

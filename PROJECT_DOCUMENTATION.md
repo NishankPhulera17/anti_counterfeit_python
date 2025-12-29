@@ -10,8 +10,9 @@
 6. [Usage Guide](#usage-guide)
 7. [Project Structure](#project-structure)
 8. [Technical Details](#technical-details)
-9. [Development Guidelines](#development-guidelines)
-10. [Troubleshooting](#troubleshooting)
+9. [Machine Learning Integration](#machine-learning-integration)
+10. [Development Guidelines](#development-guidelines)
+11. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -39,7 +40,7 @@ Only authentic, physically printed products can be verified, making it ideal for
 - **Production-Ready API**: RESTful API for integration with mobile apps and backend systems
 - **Feature-Based Verification**: Uses extracted features (not raw images) for secure comparison
 - **Liveness Detection**: Prevents scanning from static images, screenshots, or photos
-- **Multiple Print Sizes**: Support for 28×14mm, 40×20mm, and 50×25mm print sizes
+- **Print Size**: 28×14mm print size (optimized for small codes)
 
 ### Technology Stack
 
@@ -100,7 +101,7 @@ Only authentic, physically printed products can be verified, making it ideal for
    - CDP pattern with anti-photocopy features
 3. **Features Extracted**: Server extracts features from CDP (not storing raw image)
 4. **Storage**: Features stored in backend with mapping: `serial_id` → `cdp_id` → `features`
-5. **Response**: Returns QR+CDP images (3 sizes) and JWT token
+5. **Response**: Returns QR+CDP image (28×14mm) and JWT token
 
 #### Verification Flow
 
@@ -235,7 +236,7 @@ http://localhost:8000
 
 **Endpoint**: `POST /generate_qr_cdp`
 
-**Description**: Generate secure QR code with CDP pattern in multiple sizes.
+**Description**: Generate secure QR code with CDP pattern in 28×14mm size.
 
 **Request Body**:
 ```json
@@ -248,19 +249,16 @@ http://localhost:8000
 ```json
 {
   "status": "success",
-  "message": "QR+CDP generated successfully in all 3 sizes for product PRODUCT123",
+  "message": "QR+CDP generated successfully for product PRODUCT123",
   "serial_id": "550e8400-e29b-41d4-a716-446655440000",
   "cdp_id": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
   "qrToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "qrCdpImages": {
-    "28x14": "base64_encoded_image_string...",
-    "40x20": "base64_encoded_image_string...",
-    "50x25": "base64_encoded_image_string..."
-  },
-  "sizes": {
-    "28x14": {"width_mm": 28, "height_mm": 14, "dpi": 2400},
-    "40x20": {"width_mm": 40, "height_mm": 20, "dpi": 2400},
-    "50x25": {"width_mm": 50, "height_mm": 25, "dpi": 2400}
+  "qrCdpImage": "base64_encoded_image_string...",
+  "size": {
+    "width_mm": 28,
+    "height_mm": 14,
+    "dpi": 2400,
+    "size_name": "28x14"
   }
 }
 ```
@@ -296,6 +294,7 @@ http://localhost:8000
 ```json
 {
   "similarity_score": 0.782,
+  "cdp_score": 0.856,
   "threshold": 0.65,
   "liveness_passed": true,
   "is_authentic": true,
@@ -342,6 +341,7 @@ http://localhost:8000
 ```json
 {
   "similarity_score": 0.45,
+  "cdp_score": 0.523,
   "threshold": 0.65,
   "liveness_passed": true,
   "is_authentic": false,
@@ -365,6 +365,13 @@ http://localhost:8000
   "message": "CDP not found for serial_id: <serial_id>. Item may not be registered."
 }
 ```
+
+**Response Fields**:
+- `similarity_score`: Feature-based similarity score (0.0-1.0) comparing extracted features from reference and scanned CDP
+- `cdp_score`: Direct image comparison score (0.0-1.0) comparing the scanned CDP image with the reference CDP image using multi-metric analysis (SSIM, correlation, histogram, edge, texture, etc.)
+- `threshold`: Similarity threshold used for authentication (default: 0.65)
+- `liveness_passed`: Whether liveness detection passed (prevents static screenshot attacks)
+- `is_authentic`: Final authentication result (true if similarity_score >= threshold AND liveness_passed)
 
 ### Error Codes
 
@@ -399,6 +406,18 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 3. **Install Dependencies**
 ```bash
 pip install -r requirements.txt
+```
+
+**Optional: Install ML Dependencies**
+
+For ML-enhanced verification (CNN features):
+```bash
+pip install torch torchvision
+```
+
+For authenticity classifier:
+```bash
+pip install scikit-learn joblib pandas xgboost
 ```
 
 4. **Create Required Directories** (if not auto-created)
@@ -450,13 +469,14 @@ response = requests.post(
 
 result = response.json()
 if result["status"] == "success":
-    # Save 28x14mm image
-    image_28x14 = base64.b64decode(result["qrCdpImages"]["28x14"])
-    with open("product_28x14.png", "wb") as f:
-        f.write(image_28x14)
+    # Save QR+CDP image (28x14mm)
+    image_data = base64.b64decode(result["qrCdpImage"])
+    with open("product_qr_cdp.png", "wb") as f:
+        f.write(image_data)
     
     print(f"Serial ID: {result['serial_id']}")
     print(f"CDP ID: {result['cdp_id']}")
+    print(f"Size: {result['size']['size_name']} ({result['size']['width_mm']}x{result['size']['height_mm']}mm)")
 ```
 
 #### Verify Product (Python)
@@ -596,10 +616,7 @@ fun generateQRCode(productId: String) {
 
 - **Printer Resolution**: 2400 DPI (minimum: 1200 DPI)
 - **Paper Type**: 200-300 GSM coated paper
-- **Print Sizes**: 
-  - Small: 28×14mm
-  - Medium: 40×20mm
-  - Large: 50×25mm
+- **Print Size**: 28×14mm
 - **Color Mode**: CMYK (TIFF format preferred)
 - **File Format**: TIFF (CMYK) or PNG (RGB fallback)
 
@@ -627,7 +644,9 @@ anti_counterfeit_python/
 │   ├── liveness_service.py        # Liveness detection
 │   ├── feature_extraction.py      # Feature extraction and comparison
 │   ├── backend_storage.py         # Backend storage (file-based)
-│   └── generate_qr_token.py       # JWT token generation
+│   ├── generate_qr_token.py       # JWT token generation
+│   ├── ml_feature_extraction.py   # CNN feature extraction (ML Approach B)
+│   └── authenticity_classifier.py  # Authenticity classifier (ML Approach A)
 │
 ├── utils/                          # Utility functions
 │   ├── __init__.py
@@ -642,6 +661,19 @@ anti_counterfeit_python/
 │   ├── features/                   # CDP feature files
 │   └── audit/                      # Audit logs
 │
+├── training_data/                  # ML training data
+│   └── sample_data.csv            # Sample training data template
+│
+├── models/                         # Trained ML models (created after training)
+│   └── authenticity_classifier_*.pkl # Trained classifier models
+│
+├── train_authenticity_classifier.py # ML classifier training script
+├── example_ml_integration.py      # ML integration examples
+├── example_classifier_usage.py     # Classifier usage examples
+├── ML_FEATURES_EXPLAINED.md       # CNN features documentation
+├── ML_INTEGRATION_OPTIONS.md      # ML integration options
+├── QUICK_START_ML.md              # Quick start guide for ML
+│
 └── test_images/                    # Test images
 ```
 
@@ -653,6 +685,9 @@ anti_counterfeit_python/
 - **services/liveness_service.py**: Liveness detection and quality assessment
 - **services/feature_extraction.py**: Feature extraction and similarity scoring
 - **services/backend_storage.py**: File-based backend storage (production would use database)
+- **services/ml_feature_extraction.py**: CNN feature extraction for ML-enhanced verification
+- **services/authenticity_classifier.py**: Authenticity classifier using 15 metrics
+- **train_authenticity_classifier.py**: Training script for authenticity classifier
 
 ---
 
@@ -757,6 +792,376 @@ is_authentic = similarity >= 0.65 and liveness_passed
 
 ---
 
+## Machine Learning Integration
+
+### Overview
+
+The system supports two complementary ML approaches for enhanced verification:
+
+1. **CNN Feature Extraction** (Approach B): Deep learning features from pre-trained CNNs
+2. **Authenticity Classifier** (Approach A): Supervised classifier using 15 extracted metrics
+
+Both approaches can be used alongside the existing rule-based feature matching for improved accuracy.
+
+### ML Approach A: Authenticity Classifier
+
+#### Description
+
+A fast, interpretable classifier that uses 15 image quality metrics to distinguish between:
+- **"real"**: Authentic printed QR codes
+- **"duplicate"**: Photocopies, screenshots, or digital reproductions
+
+#### Features
+
+- ✅ Fast inference (~1-5ms)
+- ✅ No GPU required
+- ✅ Interpretable (feature importance analysis)
+- ✅ Uses only your 15 metrics (no CNN needed)
+- ✅ Works with CPU-only systems
+
+#### Input Features (15 Metrics)
+
+The classifier uses the following metrics extracted from CDP images:
+
+1. **Sharpness**: Image sharpness score
+2. **Contrast**: Contrast level
+3. **HistogramPeak**: Histogram peak value
+4. **EdgeDensity**: Edge density metric
+5. **EdgeStrength**: Edge strength measurement
+6. **NoiseLevel**: Noise level detection
+7. **HighFreqEnergy**: High frequency energy
+8. **ColorDiversity**: Color diversity metric
+9. **UniqueColors**: Count of unique colors
+10. **Saturation**: Color saturation
+11. **TextureUniformity**: Texture uniformity measure
+12. **CompressionArtifacts**: Compression artifact detection
+13. **HistogramEntropy**: Histogram entropy
+14. **DynamicRange**: Dynamic range
+15. **Brightness**: Average brightness
+16. **LightingCondition**: Lighting condition (bright/normal/dim/low)
+
+#### Training the Classifier
+
+**Step 1: Prepare Training Data**
+
+Create a CSV file with labeled data. Each row should contain all 15 metrics plus `LightingCondition` and `Label`:
+
+```csv
+Sharpness,Contrast,HistogramPeak,EdgeDensity,EdgeStrength,NoiseLevel,HighFreqEnergy,ColorDiversity,UniqueColors,Saturation,TextureUniformity,CompressionArtifacts,HistogramEntropy,DynamicRange,Brightness,LightingCondition,Label
+107.54,84.59,0.096,0.0230,23.57,2.00,40162258944.00,0.0003,2519,41.02,0.0593,167.03,6.35,254.00,70.93,bright,real
+45.23,35.21,0.234,0.0123,12.34,8.45,12345678901.23,0.0001,856,28.45,0.1234,345.67,5.12,180.00,45.23,normal,duplicate
+```
+
+**Minimum recommended**: 100+ samples (50+ per class)
+
+**Step 2: Create Sample Template**
+
+```bash
+python train_authenticity_classifier.py --create-sample
+```
+
+This creates `training_data/sample_data.csv` - replace with your actual labeled data.
+
+**Step 3: Train the Model**
+
+```bash
+python train_authenticity_classifier.py --data training_data/qr_metrics_labeled.csv --model-type random_forest
+```
+
+Options:
+- `--data`: Path to your training CSV
+- `--model-type`: `random_forest` (default) or `xgboost`
+- `--output`: Custom output path (default: `models/authenticity_classifier_{type}.pkl`)
+- `--test-size`: Fraction for testing (default: 0.2)
+
+**Model Types**:
+- **Random Forest**: Fast, interpretable, good default
+- **XGBoost**: Often better accuracy, slightly slower
+
+#### Using the Classifier
+
+**Basic Usage**:
+
+```python
+from services.authenticity_classifier import AuthenticityClassifier
+
+# Load trained model
+classifier = AuthenticityClassifier(
+    model_path='models/authenticity_classifier_random_forest.pkl'
+)
+
+# Your extracted metrics
+metrics = {
+    'Sharpness': 107.54,
+    'Contrast': 84.59,
+    'HistogramPeak': 0.096,
+    'EdgeDensity': 0.0230,
+    'EdgeStrength': 23.57,
+    'NoiseLevel': 2.00,
+    'HighFreqEnergy': 40162258944.00,
+    'ColorDiversity': 0.0003,
+    'UniqueColors': 2519,
+    'Saturation': 41.02,
+    'TextureUniformity': 0.0593,
+    'CompressionArtifacts': 167.03,
+    'HistogramEntropy': 6.35,
+    'DynamicRange': 254.00,
+    'Brightness': 70.93,
+    'LightingCondition': 'bright'
+}
+
+# Predict
+result = classifier.predict_single(metrics)
+
+print(f"Prediction: {result['prediction']}")  # 'real' or 'duplicate'
+print(f"Confidence: {result['confidence']:.2f}%")
+print(f"Is Authentic: {result['is_authentic']}")
+```
+
+**Integration in API**:
+
+```python
+from services.authenticity_classifier import get_classifier
+
+# In verify_cdp() function, after extracting CDP:
+classifier = get_classifier(
+    model_type='random_forest',
+    model_path='models/authenticity_classifier_random_forest.pkl'
+)
+
+# Extract metrics from scanned_cdp
+metrics_dict = {
+    'Sharpness': extract_sharpness(scanned_cdp),
+    'Contrast': extract_contrast(scanned_cdp),
+    # ... extract all 15 metrics ...
+    'LightingCondition': lighting_assessment['lighting_info']['status']
+}
+
+# Get ML prediction
+ml_result = classifier.predict_single(metrics_dict)
+
+# Use in verification decision
+if not ml_result['is_authentic']:
+    return jsonify({
+        'status': 'failed',
+        'message': 'ML classifier detected duplicate/photocopy',
+        'ml_confidence': ml_result['confidence']
+    })
+```
+
+#### Performance
+
+- **Inference Time**: ~1-5ms per prediction
+- **Accuracy**: Typically 90-95% with sufficient training data
+- **Feature Importance**: Model provides interpretable feature importance rankings
+
+### ML Approach B: CNN Feature Extraction
+
+#### Description
+
+Uses pre-trained Convolutional Neural Networks (CNNs) to extract deep learning feature vectors from CDP images. These features capture complex visual patterns that complement rule-based features.
+
+#### Features
+
+- ✅ Captures complex, non-obvious patterns
+- ✅ Learned from vast amounts of data (ImageNet)
+- ✅ Can detect subtle differences
+- ⚠️ Requires PyTorch (optional dependency)
+- ⚠️ Slower inference (50-200ms, faster with GPU)
+- ⚠️ Less interpretable (black box)
+
+#### Supported Models
+
+- **ResNet50**: 2048-dimensional feature vector (recommended)
+- **ResNet18**: 512-dimensional feature vector (faster, smaller)
+- **VGG16**: 25,088-dimensional feature vector (larger, more detailed)
+
+#### Installation
+
+```bash
+pip install torch torchvision
+```
+
+#### Using CNN Features
+
+**Basic Usage**:
+
+```python
+from services.ml_feature_extraction import extract_ml_features, compare_ml_features
+
+# Extract features from reference and scanned CDPs
+ref_ml_features = extract_ml_features(reference_cdp)    # (2048,)
+scan_ml_features = extract_ml_features(scanned_cdp)      # (2048,)
+
+# Compare using cosine similarity
+ml_score = compare_ml_features(ref_ml_features, scan_ml_features)
+# Returns: 0.0 to 1.0 (1.0 = identical)
+```
+
+**Advanced Usage**:
+
+```python
+from services.ml_feature_extraction import MLFeatureExtractor
+
+# Initialize extractor
+extractor = MLFeatureExtractor(
+    model_name='resnet50',  # or 'resnet18', 'vgg16'
+    use_gpu=True  # Use GPU if available
+)
+
+# Extract features
+features = extractor.extract_features(cdp_image)
+
+# Compare features
+similarity = extractor.compare_features(ref_features, scan_features)
+```
+
+#### Ensemble Approach
+
+Combine CNN features with rule-based features for enhanced verification:
+
+```python
+from services.feature_extraction import extract_all_features, compare_features
+from services.ml_feature_extraction import extract_ml_features, compare_ml_features
+
+# Rule-based features (existing method)
+ref_rule_features = extract_all_features(reference_cdp)
+scan_rule_features = extract_all_features(scanned_cdp)
+rule_score = compare_features(ref_rule_features, scan_rule_features)
+
+# ML features (new)
+ref_ml_features = extract_ml_features(reference_cdp)
+scan_ml_features = extract_ml_features(scanned_cdp)
+ml_score = compare_ml_features(ref_ml_features, scan_ml_features)
+
+# Ensemble combination (adjust weights based on performance)
+ml_weight = 0.3
+rule_weight = 0.7
+final_score = rule_weight * rule_score + ml_weight * ml_score
+```
+
+#### What CNN Features Capture
+
+The features are **learned representations** from ImageNet training (1.2 million images):
+
+- **Texture patterns**: Complex textures, patterns, and visual structures
+- **Spatial relationships**: How patterns relate to each other spatially
+- **Hierarchical features**:
+  - Low-level: edges, corners, gradients
+  - Mid-level: shapes, patterns, textures
+  - High-level: complex visual structures
+- **Invariant representations**: Robust to lighting, rotation, scale, minor distortions
+
+#### Performance
+
+- **Inference Time**: 
+  - CPU: 100-200ms per image
+  - GPU: 50-100ms per image
+- **Feature Dimensions**: 
+  - ResNet50: 2048
+  - ResNet18: 512
+  - VGG16: 25,088
+- **Memory**: ~200-500MB for model loading
+
+### Choosing the Right Approach
+
+#### Use Approach A (Authenticity Classifier) When:
+
+- ✅ You need fast inference (<10ms)
+- ✅ You don't have GPU resources
+- ✅ You want interpretable results
+- ✅ You have 100+ labeled training samples
+- ✅ You want to understand which metrics matter most
+
+#### Use Approach B (CNN Features) When:
+
+- ✅ You need higher accuracy and current accuracy is <90%
+- ✅ You have GPU resources available
+- ✅ You can tolerate 50-200ms inference time
+- ✅ You have >1000 labeled training images
+- ✅ You want to capture complex patterns not captured by metrics
+
+#### Use Both (Ensemble) When:
+
+- ✅ You want maximum accuracy
+- ✅ You have both labeled data and GPU resources
+- ✅ You can combine rule-based, classifier, and CNN features
+
+### ML Integration Files
+
+- **`services/authenticity_classifier.py`**: Authenticity classifier service (Approach A)
+- **`services/ml_feature_extraction.py`**: CNN feature extraction (Approach B)
+- **`train_authenticity_classifier.py`**: Training script for classifier
+- **`example_ml_integration.py`**: Integration examples
+- **`example_classifier_usage.py`**: Classifier usage examples
+
+### Training Data Requirements
+
+#### Authenticity Classifier
+
+- **Minimum**: 100 samples (50 per class)
+- **Recommended**: 500+ samples (250+ per class)
+- **Format**: CSV with 15 metrics + LightingCondition + Label
+- **Balance**: Balanced classes recommended (use `class_weight='balanced'`)
+
+#### CNN Features
+
+- **Pre-trained**: Uses ImageNet pre-trained models (no training needed)
+- **Fine-tuning** (optional): Requires 1000+ labeled images if fine-tuning
+- **Transfer learning**: Works well out-of-the-box for feature extraction
+
+### Performance Tips
+
+1. **Feature Importance**: After training classifier, check which metrics matter most
+2. **Model Selection**: 
+   - Random Forest: Fast, interpretable, good default
+   - XGBoost: Often better accuracy, slightly slower
+3. **Threshold Tuning**: Adjust prediction thresholds based on your use case
+4. **Ensemble Weights**: Tune `ml_weight` and `rule_weight` based on validation performance
+5. **GPU Acceleration**: Use GPU for CNN features if available (10-20x speedup)
+
+### Troubleshooting
+
+#### "PyTorch not available"
+
+```bash
+pip install torch torchvision
+```
+
+#### "scikit-learn not available"
+
+```bash
+pip install scikit-learn
+```
+
+#### "Model not found"
+
+```bash
+# Train a model first
+python train_authenticity_classifier.py --data your_data.csv
+```
+
+#### Low accuracy
+
+- Check if metrics are being extracted correctly
+- Ensure balanced training data
+- Try XGBoost instead of Random Forest
+- Collect more training samples
+- For CNN features, try different models (ResNet18 vs ResNet50)
+
+#### Slow inference
+
+- **Classifier**: Already fast (~1-5ms), reduce `n_estimators` if needed
+- **CNN**: Use GPU if available, or try ResNet18 (smaller, faster)
+
+### Additional Resources
+
+- **`ML_FEATURES_EXPLAINED.md`**: Detailed explanation of CNN features
+- **`ML_INTEGRATION_OPTIONS.md`**: Advanced integration options
+- **`QUICK_START_ML.md`**: Quick start guide for ML integration
+
+---
+
 ## Development Guidelines
 
 ### Code Style
@@ -770,7 +1175,7 @@ is_authentic = similarity >= 0.65 and liveness_passed
 
 1. Create pattern function in `generate_qr_cdp.py`
 2. Add to `add_anti_photocopy_pattern()` chain
-3. Test with small codes (28×14mm) and large codes (50×25mm)
+3. Test with 28×14mm codes
 4. Verify pattern breaks when photocopied
 5. Update documentation
 
@@ -853,9 +1258,9 @@ REDIS_URL = os.getenv('REDIS_URL')
 
 **Solutions**:
 - Increase print resolution to 2400 DPI
-- Increase physical size to 40×20mm or larger
 - Ensure high contrast (black/white)
 - Check print quality (no smudging, blur)
+- Ensure proper lighting and camera focus when scanning
 
 #### 2. Low CDP Score
 
