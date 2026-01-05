@@ -1,0 +1,49 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="dashboard-grid">
+    <div class="card stat-card">
+        <div class="stat-icon blue">
+            <i class="fa-solid fa-cubes"></i>
+        </div>
+        <div class="stat-info">
+            <h3>System Ready</h3>
+            <p>Status</p>
+        </div>
+    </div>
+
+    <div class="card stat-card">
+        <div class="stat-icon green">
+            <i class="fa-solid fa-check-circle"></i>
+        </div>
+        <div class="stat-info">
+            <h3>Online</h3>
+            <p>API Connection</p>
+        </div>
+    </div>
+
+    <div class="card stat-card">
+        <div class="stat-icon purple">
+            <i class="fa-solid fa-fingerprint"></i>
+        </div>
+        <div class="stat-info">
+            <h3>Active</h3>
+            <p>CDP Matching</p>
+        </div>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 2rem;">
+    <div class="card-header">
+        <h2 class="card-title">Quick Actions</h2>
+    </div>
+    <div style="display: flex; gap: 1rem;">
+        <a href="/ui/generate" class="btn btn-primary">
+            <i class="fa-solid fa-plus"></i> Generate New QR
+        </a>
+        <a href="/ui/verify" class="btn btn-secondary">
+            <i class="fa-solid fa-camera"></i> Verify Product
+        </a>
+    </div>
+</div>
+{% endblock %}
