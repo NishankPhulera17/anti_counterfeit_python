@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from services import cdp_service, liveness_service
 from services.feature_extraction import extract_all_features, compare_features
 from services.backend_storage import get_backend_storage
@@ -25,6 +25,19 @@ os.makedirs(EXTRACTED_CDP_DIR, exist_ok=True)
 
 # In-memory reference CDP images (replace with actual references)
 reference_cdps = {}  # {product_id: np.array}
+
+# UI Routes
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/ui/generate')
+def ui_generate():
+    return render_template('generate.html')
+
+@app.route('/ui/verify')
+def ui_verify():
+    return render_template('verify.html')
 
 @app.route('/generate_qr_cdp', methods=['POST'])
 def generate_qr_cdp_endpoint():

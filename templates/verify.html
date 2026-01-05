@@ -1,0 +1,102 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="verify-container">
+    <!-- Camera Section -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Scan Product</h2>
+        </div>
+
+        <div class="camera-preview">
+            <video id="video-element" autoplay playsinline muted></video>
+            <div class="overlay-guide"></div>
+        </div>
+
+        <div style="margin-top: 1.5rem; text-align: left;">
+            <div style="margin-bottom: 1.5rem;">
+                <label
+                    style="display: block; color: var(--text-primary); margin-bottom: 0.8rem; font-weight: 600;">Label
+                    Condition</label>
+                <div class="toggle-group" id="label-group">
+                    <button type="button" class="toggle-btn" data-value="real">Real</button>
+                    <button type="button" class="toggle-btn" data-value="fake">Fake</button>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label
+                    style="display: block; color: var(--text-primary); margin-bottom: 0.8rem; font-weight: 600;">Lighting
+                    Condition</label>
+                <div class="toggle-group" id="lighting-group">
+                    <button type="button" class="toggle-btn" data-value="bright">Bright</button>
+                    <button type="button" class="toggle-btn" data-value="avg">Avg</button>
+                    <button type="button" class="toggle-btn" data-value="dull">Dull</button>
+                    <!-- Poor button on next line visually if needed, but flex wrap handles it -->
+                    <button type="button" class="toggle-btn" data-value="poor">Poor</button>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 1.5rem; text-align: center;">
+            <button id="verify-btn" class="btn btn-primary">
+                <i class="fa-solid fa-expand"></i> Verify Now
+            </button>
+            <p style="margin-top: 1rem; color: var(--text-secondary); font-size: 0.9rem;">
+                Align the QR code within the square guide. Ensure good lighting.
+            </p>
+        </div>
+    </div>
+
+    <!-- Results Section -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Verification Results</h2>
+        </div>
+
+        <div id="verification-result" class="result-overlay">
+            <div class="result-icon" style="font-size: 3rem; margin-bottom: 1rem;"></div>
+            <h3 class="result-title" style="font-size: 1.5rem; margin-bottom: 0.5rem;"></h3>
+            <p id="result-message" style="color: var(--text-secondary); margin-bottom: 1.5rem;"></p>
+
+            <div
+                style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; text-align: left; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 0.5rem;">
+                <div>
+                    <span style="color: var(--text-secondary); font-size: 0.8rem;">Confidence Score</span>
+                    <div id="result-score" style="font-size: 1.2rem; font-weight: bold;"></div>
+                </div>
+                <div>
+                    <span style="color: var(--text-secondary); font-size: 0.8rem;">Liveness Check</span>
+                    <div id="result-liveness" style="font-size: 1.2rem; font-weight: bold;"></div>
+                </div>
+            </div>
+
+            <div style="margin-top: 1.5rem;">
+                <button onclick="location.reload()" class="btn btn-secondary">
+                    <i class="fa-solid fa-rotate-right"></i> Scan Another
+                </button>
+            </div>
+        </div>
+
+        <div id="placeholder-msg" style="text-align: center; color: var(--text-secondary); padding: 3rem;">
+            <i class="fa-solid fa-arrow-left" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+            <p>Scan a product to see verification details here.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Simple script to toggle placeholder
+    const resultDiv = document.getElementById('verification-result');
+    const placeholder = document.getElementById('placeholder-msg');
+
+    // Observer or simple check to hide placeholder (handled in main.js principally)
+    // Adding mutation observer to hide placeholder when result is shown
+    const observer = new MutationObserver((mutations) => {
+        if (resultDiv.style.display === 'block') {
+            placeholder.style.display = 'none';
+        }
+    });
+    observer.observe(resultDiv, { attributes: true, attributeFilter: ['style'] });
+</script>
+{% endblock %}

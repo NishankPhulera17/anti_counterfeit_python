@@ -1,0 +1,31 @@
+/* Toggle Buttons */
+.toggle-group {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.toggle-btn {
+    padding: 0.75rem 1.5rem;
+    background-color: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+    min-width: 80px;
+}
+
+.toggle-btn:hover {
+    border-color: var(--text-secondary);
+    color: var(--text-primary);
+}
+
+.toggle-btn.selected {
+    background-color: rgba(59, 130, 246, 0.1);
+    /* Blue tint */
+    border-color: var(--accent-blue);
+    color: var(--accent-blue);
+    font-weight: 500;
+}
