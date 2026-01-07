@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Generated files
+generated_qr_cdp/
+generated_cdp/
+scanned_images/
+extracted_cdp/
+cropped_qr_cdp/
+scanned_cdp/
+testQR/
+test_images/
+
+# Large files
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# Models (if large)
+models/*.pth
+models/*.h5
+models/*.pkl
+
+# Logs
+*.log
+generation_log.txt
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Data
+training_data/*.csv
+backend_storage/
+
