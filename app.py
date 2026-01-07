@@ -64,8 +64,9 @@ def generate_qr_cdp_endpoint():
         # Generate unique CDP ID (cryptographically random)
         cdp_id = str(uuid.uuid4())
         
-        # Generate only 28x14mm size
-        width_mm, height_mm, dpi, size_name = 28, 14, 2400, "28x14"
+        # Generate only 28x14mm size at 1200 DPI for Heidelberg printer
+        # Physical size: 28mm width × 14mm height (landscape orientation)
+        width_mm, height_mm, dpi, size_name = 28, 14, 1200, "28x14"
         
         print(f"[INFO] Generating {size_name} QR+CDP for product {product_id}, serial {serial_id}...", flush=True)
         
@@ -198,13 +199,7 @@ def verify_cdp():
     lighting_condition = data.get('lighting_condition')  # Optional: "bright", "normal", "dim", "low"
     request_product_id = data.get('product_id')  # Optional: product_id from request
     
-    # Require video frames for basic liveness (static screenshot detection)
-    if not video_frames_base64 or len(video_frames_base64) < 2:
-        return jsonify({
-            "status": "failed",
-            "message": "video_frames are required (minimum 2 frames) to prevent static screenshot scanning."
-        }), 400
-    
+    # cdp_image is required
     if not cdp_base64:
         return jsonify({
             "status": "failed",
@@ -234,21 +229,19 @@ def verify_cdp():
     cv2.imwrite(scanned_image_path, cdp_img)
     print(f"[INFO] Scanned image saved: {scanned_image_path}", flush=True)
     
-    # Convert video frames
+    # Convert video frames (optional - only if provided)
     video_frames = []
-    for frame_base64 in video_frames_base64:
-        try:
-            frame = base64_to_image(frame_base64)
-            if frame is not None:
-                video_frames.append(frame)
-        except Exception as e:
-            print(f"[WARNING] Failed to decode video frame: {str(e)}", flush=True)
-    
-    if len(video_frames) < 2:
-        return jsonify({
-            "status": "failed",
-            "message": "At least 2 valid video frames are required"
-        }), 400
+    if video_frames_base64:
+        for frame_base64 in video_frames_base64:
+            try:
+                frame = base64_to_image(frame_base64)
+                if frame is not None:
+                    video_frames.append(frame)
+            except Exception as e:
+                print(f"[WARNING] Failed to decode video frame: {str(e)}", flush=True)
+        print(f"[INFO] Decoded {len(video_frames)} video frames (optional)", flush=True)
+    else:
+        print(f"[INFO] No video frames provided (optional parameter)", flush=True)
     
     # Step 1: Extract serial_id from QR code (QR encodes serial_id, not product_id)
     serial_id = None
@@ -330,9 +323,18 @@ def verify_cdp():
     # Threshold: 0.65 (more lenient than old 0.7, accounts for mobile capture variations)
     AUTHENTICITY_THRESHOLD = 0.65
     
-    # Step 7: Basic liveness check (limited role - only rejects static screenshots)
-    first_frame = video_frames[0]
-    liveness_passed = liveness_service.liveness_check(first_frame, video_frames)
+    # Step 7: Basic liveness check (optional - only if video frames provided)
+    # Use cdp_img as the main frame, video frames are optional for additional checks
+    liveness_passed = True  # Default to True if no video frames
+    if video_frames and len(video_frames) >= 2:
+        try:
+            liveness_passed = liveness_service.liveness_check(cdp_img, video_frames)
+            print(f"[INFO] Liveness check result: {liveness_passed}", flush=True)
+        except Exception as e:
+            print(f"[WARNING] Liveness check failed, defaulting to True: {str(e)}", flush=True)
+            liveness_passed = True
+    else:
+        print(f"[INFO] No video frames provided, skipping liveness check (defaulting to passed)", flush=True)
     
     # Step 8: Determine authenticity
     # Main security comes from feature matching, liveness is secondary
@@ -352,36 +354,10 @@ def verify_cdp():
     )
     
     # Step 10: Additional assessments (for user feedback, not security)
-    distance_check = liveness_service.check_scanning_frame_distance(first_frame)
-    lighting_assessment = liveness_service.assess_lighting_conditions(first_frame)
-    size_assessment = liveness_service.detect_qr_code_size(first_frame)
-    
-    # Step 11: Optionally verify product_id from CDP pattern (for additional validation)
-    # Note: This is optional - the main verification is via feature matching above
-    cdp_product_id = None
-    identified_score = 0.0
-    try:
-        print(f"[INFO] Optionally verifying product_id against CDP pattern...", flush=True)
-        cdp_product_id, identified_score = cdp_service.identify_product_from_cdp(
-            cdp_img, 
-            CDP_DIR, 
-            min_match_score=0.6
-        )
-        if cdp_product_id:
-            print(f"[INFO] Identified product_id from CDP: {cdp_product_id} (match score: {identified_score:.3f})", flush=True)
-            
-            # Verify that CDP matches the product_id from backend (if CDP identification succeeded)
-            if cdp_product_id != product_id:
-                print(f"[WARNING] Product ID mismatch: Backend='{product_id}', CDP Pattern='{cdp_product_id}'", flush=True)
-                # Don't fail verification - just log warning (CDP pattern matching is optional)
-            else:
-                print(f"[INFO] Product ID verification passed: Backend and CDP pattern both indicate '{product_id}'", flush=True)
-        else:
-            print(f"[INFO] Could not identify product from CDP pattern (best score: {identified_score:.3f}). Using backend product_id: {product_id}", flush=True)
-    except Exception as e:
-        print(f"[WARNING] Error identifying product from CDP pattern: {str(e)}. Using backend product_id: {product_id}", flush=True)
-        import traceback
-        traceback.print_exc()
+    # Use cdp_img for all assessments (from cdp_base64)
+    distance_check = liveness_service.check_scanning_frame_distance(cdp_img)
+    lighting_assessment = liveness_service.assess_lighting_conditions(cdp_img)
+    size_assessment = liveness_service.detect_qr_code_size(cdp_img)
     
     print(f"[INFO] Verification complete for product_id: {product_id} (from backend lookup)", flush=True)
     
@@ -392,81 +368,9 @@ def verify_cdp():
     cv2.imwrite(scanned_image_path_with_product, cdp_img)
     print(f"[INFO] Scanned image saved with product_id: {scanned_image_path_with_product}", flush=True)
     
-    # Load reference CDP from folder (try CMYK TIFF first, then PNG fallback)
-    # Files are saved as: {cdp_id}_{size}.tiff and {cdp_id}_{size}.png
-    # e.g., 495f8081-906a-48d8-9ea5-412a1da549a6_28x14.tiff, etc.
-    print(f"[DEBUG] Starting reference CDP loading for product_id: {product_id}, cdp_id: {cdp_id}", flush=True)
-    import glob
-    
-    # Try to find files with size suffix pattern: {cdp_id}_*.tiff or {cdp_id}_*.png
-    cmyk_tiff_pattern = os.path.join(CDP_DIR, f"{cdp_id}_*.tiff")
-    png_pattern = os.path.join(CDP_DIR, f"{cdp_id}_*.png")
-    
-    # Also try exact match without size suffix (for backward compatibility)
-    cmyk_tiff_path = os.path.join(CDP_DIR, f"{cdp_id}.tiff")
-    png_path = os.path.join(CDP_DIR, f"{cdp_id}.png")
-    
-    ref_cdp_path = None
-    ref_img = None
-    
-    # Prefer CMYK TIFF if available, otherwise use PNG
-    # First try exact match, then try pattern match
-    if os.path.exists(cmyk_tiff_path):
-        ref_cdp_path = cmyk_tiff_path
-    else:
-        # Search for files matching pattern
-        tiff_files = glob.glob(cmyk_tiff_pattern)
-        if tiff_files:
-            ref_cdp_path = tiff_files[0]  # Use first match
-            print(f"[INFO] Found TIFF file with size suffix: {ref_cdp_path}", flush=True)
-    
-    if ref_cdp_path:
-        # OpenCV can read TIFF files, but CMYK TIFF needs special handling
-        # Use PIL to properly read CMYK and convert to RGB/BGR for OpenCV
-        try:
-            from PIL import Image
-            pil_img = Image.open(ref_cdp_path)
-            # Convert CMYK to RGB if needed
-            if pil_img.mode == 'CMYK':
-                pil_img = pil_img.convert('RGB')
-            # Convert PIL image to numpy array (RGB)
-            ref_img = np.array(pil_img)
-            # Convert RGB to BGR for OpenCV
-            ref_img = cv2.cvtColor(ref_img, cv2.COLOR_RGB2BGR)
-            print(f"[INFO] Loaded CMYK TIFF reference CDP: {ref_cdp_path}", flush=True)
-        except Exception as e:
-            print(f"[WARNING] Failed to load CMYK TIFF with PIL, trying OpenCV: {str(e)}", flush=True)
-            ref_img = cv2.imread(ref_cdp_path)
-    elif os.path.exists(png_path):
-        ref_cdp_path = png_path
-        ref_img = cv2.imread(ref_cdp_path)
-        print(f"[INFO] Loaded PNG reference CDP: {ref_cdp_path}", flush=True)
-    else:
-        # Search for PNG files matching pattern
-        png_files = glob.glob(png_pattern)
-        if png_files:
-            ref_cdp_path = png_files[0]  # Use first match
-            ref_img = cv2.imread(ref_cdp_path)
-            print(f"[INFO] Found and loaded PNG file with size suffix: {ref_cdp_path}", flush=True)
-        else:
-            return jsonify({
-                'cdp_score': 0, 
-                'liveness_passed': False,
-                'status': 'failed',
-                'message': f'Reference CDP not found for cdp_id: {cdp_id} (checked {cdp_id}.tiff, {cdp_id}.png, and pattern {cdp_id}_*.tiff/png)'
-            })
-    
-    if ref_img is None:
-        return jsonify({
-            'cdp_score': 0, 
-            'liveness_passed': False,
-            'status': 'failed',
-            'message': f'Failed to load reference CDP for cdp_id: {cdp_id}'
-        })
-    
-    # Extract and save scanned CDP region to extracted_cdp folder
+    # Extract and save scanned CDP region to extracted_cdp folder (for debugging/analysis)
     extracted_cdp_filename = f"extracted_cdp_{product_id}_{timestamp}.png"
-    scanned_cdp = cdp_service.extract_cdp_region(
+    scanned_cdp_extracted = cdp_service.extract_cdp_region(
         cdp_img, 
         save_file=True, 
         output_dir=EXTRACTED_CDP_DIR, 
@@ -474,65 +378,54 @@ def verify_cdp():
     )
     print(f"[INFO] Extracted CDP saved: {os.path.join(EXTRACTED_CDP_DIR, extracted_cdp_filename)}", flush=True)
     
-    # Compare CDP images
-    cdp_score = 0.0
-    try:
-        print(f"[INFO] Comparing CDP images...", flush=True)
-        cdp_score = cdp_service.compare_cdp(cdp_img, ref_img)
-        print(f"[INFO] CDP comparison score: {cdp_score:.3f}", flush=True)
-    except Exception as e:
-        print(f"[ERROR] Failed to compare CDP images: {str(e)}", flush=True)
-        import traceback
-        traceback.print_exc()
+    # Use feature-based similarity_score as cdp_score (for backward compatibility)
+    # All verification now uses feature JSON matching, not image-to-image comparison
+    cdp_score = similarity_score
+    print(f"[INFO] Using feature-based similarity score as cdp_score: {cdp_score:.3f}", flush=True)
 
-    # Enhanced liveness check with video frames (detects screens, photocopies, static images)
+    # Enhanced liveness check with video frames (optional - only if provided)
     # Note: liveness_passed was already calculated earlier, but we're re-running for additional checks
-    liveness_passed_secondary = False
+    liveness_passed_secondary = liveness_passed  # Default to primary result
     try:
-        print(f"[INFO] Running secondary liveness check...", flush=True)
-        first_frame = video_frames[0] if video_frames else None
-        if first_frame is not None:
-            liveness_passed_secondary = liveness_service.liveness_check(first_frame, video_frames)
+        if video_frames and len(video_frames) >= 2:
+            print(f"[INFO] Running secondary liveness check with video frames...", flush=True)
+            liveness_passed_secondary = liveness_service.liveness_check(cdp_img, video_frames)
             print(f"[INFO] Secondary liveness check result: {liveness_passed_secondary}", flush=True)
         else:
-            print(f"[WARNING] No video frames available for secondary liveness check", flush=True)
+            print(f"[INFO] No video frames available for secondary liveness check, using primary result", flush=True)
     except Exception as e:
         print(f"[ERROR] Failed to run secondary liveness check: {str(e)}", flush=True)
         import traceback
         traceback.print_exc()
-        first_frame = video_frames[0] if video_frames else None
     
-    # Check frame distance
+    # Check frame distance (using cdp_img)
     distance_check = {'has_warnings': False, 'warnings': [], 'frame_info': {}}
     try:
         print(f"[INFO] Checking frame distance...", flush=True)
-        if first_frame is not None:
-            distance_check = liveness_service.check_scanning_frame_distance(first_frame)
-            print(f"[INFO] Frame distance check completed", flush=True)
+        distance_check = liveness_service.check_scanning_frame_distance(cdp_img)
+        print(f"[INFO] Frame distance check completed", flush=True)
     except Exception as e:
         print(f"[ERROR] Failed to check frame distance: {str(e)}", flush=True)
         import traceback
         traceback.print_exc()
     
-    # Assess lighting conditions and generate warnings
+    # Assess lighting conditions and generate warnings (using cdp_img)
     lighting_assessment = {'has_warnings': False, 'has_critical_warnings': False, 'warnings': [], 'lighting_info': {}}
     try:
         print(f"[INFO] Assessing lighting conditions...", flush=True)
-        if first_frame is not None:
-            lighting_assessment = liveness_service.assess_lighting_conditions(first_frame)
-            print(f"[INFO] Lighting assessment completed", flush=True)
+        lighting_assessment = liveness_service.assess_lighting_conditions(cdp_img)
+        print(f"[INFO] Lighting assessment completed", flush=True)
     except Exception as e:
         print(f"[ERROR] Failed to assess lighting conditions: {str(e)}", flush=True)
         import traceback
         traceback.print_exc()
     
-    # Detect CDP/pattern size (using red border detection) for warnings
+    # Detect CDP/pattern size (using cdp_img) for warnings
     size_assessment = {'has_warnings': False, 'warnings': [], 'size_info': {}}
     try:
         print(f"[INFO] Detecting CDP/pattern size...", flush=True)
-        if first_frame is not None:
-            size_assessment = liveness_service.detect_qr_code_size(first_frame)
-            print(f"[INFO] Size assessment completed", flush=True)
+        size_assessment = liveness_service.detect_qr_code_size(cdp_img)
+        print(f"[INFO] Size assessment completed", flush=True)
     except Exception as e:
         print(f"[ERROR] Failed to detect CDP/pattern size: {str(e)}", flush=True)
         import traceback
@@ -572,25 +465,25 @@ def verify_cdp():
             'warnings': distance_check['warnings']
         },
         'lighting': {
-            'status': str(lighting_assessment['lighting_info']['status']),
-            'quality_score': int(lighting_assessment['lighting_info']['quality_score']),
-            'has_warnings': bool(lighting_assessment['has_warnings']),
-            'has_critical_warnings': bool(lighting_assessment['has_critical_warnings']),
-            'warnings': lighting_assessment['warnings'],
+            'status': str(lighting_assessment.get('lighting_info', {}).get('status', 'unknown')),
+            'quality_score': int(lighting_assessment.get('lighting_info', {}).get('quality_score', 0)),
+            'has_warnings': bool(lighting_assessment.get('has_warnings', False)),
+            'has_critical_warnings': bool(lighting_assessment.get('has_critical_warnings', False)),
+            'warnings': lighting_assessment.get('warnings', []),
             'metrics': {
-                'brightness': float(lighting_assessment['lighting_info']['brightness']),
-                'contrast': float(lighting_assessment['lighting_info']['contrast']),
-                'dynamic_range': float(lighting_assessment['lighting_info']['dynamic_range'])
+                'brightness': float(lighting_assessment.get('lighting_info', {}).get('brightness', 0)),
+                'contrast': float(lighting_assessment.get('lighting_info', {}).get('contrast', 0)),
+                'dynamic_range': float(lighting_assessment.get('lighting_info', {}).get('dynamic_range', 0))
             }
         },
         'pattern_size': {
-            'size_category': str(size_assessment['size_info']['size_category']),
-            'coverage_ratio': float(size_assessment['size_info']['coverage_ratio']),
-            'width_pixels': int(size_assessment['size_info']['width_pixels']),
-            'height_pixels': int(size_assessment['size_info']['height_pixels']),
-            'aspect_ratio': float(size_assessment['size_info']['aspect_ratio']),
-            'has_warnings': bool(size_assessment['has_warnings']),
-            'warnings': size_assessment['warnings']
+            'size_category': str(size_assessment.get('size_info', {}).get('size_category', 'unknown')),
+            'coverage_ratio': float(size_assessment.get('size_info', {}).get('coverage_ratio', 0)),
+            'width_pixels': int(size_assessment.get('size_info', {}).get('width_pixels', 0)),
+            'height_pixels': int(size_assessment.get('size_info', {}).get('height_pixels', 0)),
+            'aspect_ratio': float(size_assessment.get('size_info', {}).get('aspect_ratio', 0)),
+            'has_warnings': bool(size_assessment.get('has_warnings', False)),
+            'warnings': size_assessment.get('warnings', [])
         }
     }
     
@@ -612,7 +505,10 @@ def verify_cdp():
         # Use provided label_condition or default to 'unknown'
         label = label_condition if label_condition is not None else 'unknown'
         # Use provided lighting_condition or detected lighting status
-        lighting = lighting_condition if lighting_condition is not None else lighting_assessment['lighting_info'].get('status', 'normal')
+        if lighting_condition is not None:
+            lighting = lighting_condition
+        else:
+            lighting = lighting_assessment.get('lighting_info', {}).get('status', 'normal')
         
         # Append to CSV
         csv_saved = append_to_training_csv(

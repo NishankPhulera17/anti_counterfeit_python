@@ -2,351 +2,351 @@
   {
     "success": true,
     "product_id": "PRODUCT1",
-    "serial_id": "67665c53-17d3-474f-a0be-e755431ca661",
-    "cdp_id": "533ebba5-bae5-4f81-90df-351b67ebfc74",
+    "serial_id": "b8e8458b-a41a-42d1-b027-56624947f603",
+    "cdp_id": "3de59793-cba0-42f8-87e4-be89507e65fc",
     "message": "QR+CDP generated successfully for product PRODUCT1"
   },
   {
     "success": true,
     "product_id": "PRODUCT2",
-    "serial_id": "80dd7db7-206b-44e1-9c54-2e5862c5c10d",
-    "cdp_id": "fa948a31-10f5-4f93-95f2-e3841d9d5508",
+    "serial_id": "8a65fdd8-b573-4705-884a-22709aca72ba",
+    "cdp_id": "b95d23ed-4b94-49ef-a5b4-49d1d1c87f55",
     "message": "QR+CDP generated successfully for product PRODUCT2"
   },
   {
     "success": true,
     "product_id": "PRODUCT3",
-    "serial_id": "68ebed29-d8c3-4781-b924-81bc26085db9",
-    "cdp_id": "2e756ec8-35d2-4630-ab88-876dd0aab9f6",
+    "serial_id": "03a3cb73-c9d1-4e8b-9158-8d036c85a800",
+    "cdp_id": "5d481675-9d12-4901-8088-59fa1974943f",
     "message": "QR+CDP generated successfully for product PRODUCT3"
   },
   {
     "success": true,
     "product_id": "PRODUCT4",
-    "serial_id": "119df1e9-87b2-47ca-8ba8-cf61a3d4e724",
-    "cdp_id": "1a537c57-0464-4f22-a784-034feb3d34a5",
+    "serial_id": "b935d251-71e9-45a5-852e-f41f68937d10",
+    "cdp_id": "39b70655-9b6e-4ec9-ae8c-1e2fbd4bc098",
     "message": "QR+CDP generated successfully for product PRODUCT4"
   },
   {
     "success": true,
     "product_id": "PRODUCT5",
-    "serial_id": "173ab68a-a735-4e19-a5ea-eff0f7e0f14e",
-    "cdp_id": "05f81541-e549-4327-81de-472a50a7b02e",
+    "serial_id": "e79775ab-e6a8-4fbd-a7fb-471a4ba03c5b",
+    "cdp_id": "b8e6b8d8-6190-4d9f-b8cc-928506770c06",
     "message": "QR+CDP generated successfully for product PRODUCT5"
   },
   {
     "success": true,
     "product_id": "PRODUCT6",
-    "serial_id": "08abba5c-9ea8-4782-bf0b-2f862ff87a32",
-    "cdp_id": "5b7c8dd2-de6b-486c-9814-7f9acd9c60e1",
+    "serial_id": "62956406-bbfb-411b-8378-6a95d5f77350",
+    "cdp_id": "2e482b2b-cdc6-4c2e-9074-2739d6d16014",
     "message": "QR+CDP generated successfully for product PRODUCT6"
   },
   {
     "success": true,
     "product_id": "PRODUCT7",
-    "serial_id": "91e4246a-0ee5-4691-b243-5105d5bcdf1c",
-    "cdp_id": "51aa3581-e097-4aef-8b29-9a42c967c208",
+    "serial_id": "380ac1dc-bf6e-41e8-9fa1-396acba35015",
+    "cdp_id": "7be18023-7e2b-4e6c-929f-c09dd1a05c33",
     "message": "QR+CDP generated successfully for product PRODUCT7"
   },
   {
     "success": true,
     "product_id": "PRODUCT8",
-    "serial_id": "851f9928-e7a2-4285-bbe7-da95d7cc7307",
-    "cdp_id": "58d760e6-826c-4035-b548-e3c3351a0a5e",
+    "serial_id": "4060215c-2054-44fd-966d-7580bd78f167",
+    "cdp_id": "7e1de1ca-4765-49cd-b3f8-44b51a86979c",
     "message": "QR+CDP generated successfully for product PRODUCT8"
   },
   {
     "success": true,
     "product_id": "PRODUCT9",
-    "serial_id": "c7330a65-a30b-4a37-be99-07ae0fda8264",
-    "cdp_id": "426243ba-35d7-4bf6-8ad7-0af963a7403c",
+    "serial_id": "478e8d66-ebe3-4208-bb43-6c9f6b6b2c9d",
+    "cdp_id": "585bb361-9a0e-481b-80ab-b498c97f3560",
     "message": "QR+CDP generated successfully for product PRODUCT9"
   },
   {
     "success": true,
     "product_id": "PRODUCT10",
-    "serial_id": "1c98b878-8fee-44cb-9d2e-44e771f40f78",
-    "cdp_id": "6b327b92-ff4e-4a7d-9dc3-71241c75f197",
+    "serial_id": "2bc2d1d8-3b04-40d2-a02e-dbe8552e1292",
+    "cdp_id": "f5993983-ecb2-4482-9b61-1ffae437f990",
     "message": "QR+CDP generated successfully for product PRODUCT10"
   },
   {
     "success": true,
     "product_id": "PRODUCT11",
-    "serial_id": "b95e389a-30c1-410b-92b4-987d37e7a3d7",
-    "cdp_id": "0a92e7fe-c166-45c1-b7ab-cd52232886ef",
+    "serial_id": "d214cf1a-ab24-46b3-9fcd-9ba697d7adeb",
+    "cdp_id": "53671a44-1725-4d50-ab2b-5220e1f530f6",
     "message": "QR+CDP generated successfully for product PRODUCT11"
   },
   {
     "success": true,
     "product_id": "PRODUCT12",
-    "serial_id": "5eef81b9-19b6-4c65-af6f-971c33788097",
-    "cdp_id": "f8cb1086-e227-4747-ae04-56d68b4ad7e2",
+    "serial_id": "edda1f69-d62b-43b0-abad-dba7c77d1dd4",
+    "cdp_id": "6ec7f525-aea8-4ab4-8a0b-ebd4ed330554",
     "message": "QR+CDP generated successfully for product PRODUCT12"
   },
   {
     "success": true,
     "product_id": "PRODUCT13",
-    "serial_id": "69fbc94c-92d6-47cf-97a3-df68e0effc64",
-    "cdp_id": "98c1c2f7-7fef-4434-9fc0-a8e29868ed36",
+    "serial_id": "c3b168d8-f619-4818-b477-23a1d5005b40",
+    "cdp_id": "d2ca3be2-ab0d-4af1-a697-2f775c4c89ba",
     "message": "QR+CDP generated successfully for product PRODUCT13"
   },
   {
     "success": true,
     "product_id": "PRODUCT14",
-    "serial_id": "9c3a26a3-9b57-478c-92b7-a5c8c3f9f6bc",
-    "cdp_id": "dce3ecdd-b3b4-488b-89ce-04da3ce1543e",
+    "serial_id": "65b2aa76-e66c-476c-b05c-afcc46eee43e",
+    "cdp_id": "a7bcdce0-e466-4192-9f4a-673a0bc25014",
     "message": "QR+CDP generated successfully for product PRODUCT14"
   },
   {
     "success": true,
     "product_id": "PRODUCT15",
-    "serial_id": "1b82502c-f6b7-4ce3-8bfd-8b0d6e2f8b8e",
-    "cdp_id": "9754edf9-bd06-4a37-8522-f2cd8080dcf7",
+    "serial_id": "33e3fa1e-2ab0-4551-86dc-60ee5ae08cb3",
+    "cdp_id": "3470c0bc-c6ea-4628-bddb-ffe648c738e8",
     "message": "QR+CDP generated successfully for product PRODUCT15"
   },
   {
     "success": true,
     "product_id": "PRODUCT16",
-    "serial_id": "c18a0c40-abd0-419b-a49e-ba84b1a635f2",
-    "cdp_id": "dff744fc-4184-47c1-8c9d-6c50cb7773dc",
+    "serial_id": "273d528d-717a-4807-9f6f-b9982de659bb",
+    "cdp_id": "a9b027ee-1ea0-46d5-a49e-5bd167c1be4a",
     "message": "QR+CDP generated successfully for product PRODUCT16"
   },
   {
     "success": true,
     "product_id": "PRODUCT17",
-    "serial_id": "bfe33b57-1f25-4dab-ab54-0bc3fd6ec28c",
-    "cdp_id": "fbf3d7b1-5889-4400-8b79-91078fdd2172",
+    "serial_id": "f00eaf2f-d83d-42d8-b356-7bc76fb6ff65",
+    "cdp_id": "0a62f2a7-0791-422b-a996-a8fcca3265d7",
     "message": "QR+CDP generated successfully for product PRODUCT17"
   },
   {
     "success": true,
     "product_id": "PRODUCT18",
-    "serial_id": "6c3800ef-dfd5-46f3-a883-51629cf98597",
-    "cdp_id": "67da1be2-f9ed-4b6b-825b-513177f10b6f",
+    "serial_id": "1aeb3989-0c2f-43e0-b5c6-98ad977a65ca",
+    "cdp_id": "8f0c312f-b279-4c1b-b13e-7d9cde6d563b",
     "message": "QR+CDP generated successfully for product PRODUCT18"
   },
   {
     "success": true,
     "product_id": "PRODUCT19",
-    "serial_id": "6246d8dc-1469-4427-92b4-205f4dd151c5",
-    "cdp_id": "9e4ae59c-cf6c-4019-b42b-ac9acd66fdca",
+    "serial_id": "6e9bfb18-ad52-4e70-97e7-c653873dbdb5",
+    "cdp_id": "90c8055f-7511-4797-bf11-a337df9a0901",
     "message": "QR+CDP generated successfully for product PRODUCT19"
   },
   {
     "success": true,
     "product_id": "PRODUCT20",
-    "serial_id": "3bf9c304-6c8e-47a7-a746-773b6422cb49",
-    "cdp_id": "365bd8c6-61f5-43bd-bf86-b226a9488a04",
+    "serial_id": "8c171e4c-4065-47bd-96e3-6eaacab7a924",
+    "cdp_id": "0b91ad3c-07f4-40c6-abe9-bdf6d1bc587f",
     "message": "QR+CDP generated successfully for product PRODUCT20"
   },
   {
     "success": true,
     "product_id": "PRODUCT21",
-    "serial_id": "a7b7cc0f-2933-4b3a-a417-04a6e1540550",
-    "cdp_id": "6eded44c-22b2-4453-a100-1c45ec452645",
+    "serial_id": "77f10744-910b-4881-95e2-6bce1b29f841",
+    "cdp_id": "9b38c99f-595f-4e85-92bd-e95d4bc61428",
     "message": "QR+CDP generated successfully for product PRODUCT21"
   },
   {
     "success": true,
     "product_id": "PRODUCT22",
-    "serial_id": "a90269ce-2716-4863-9523-20e4b2bda3f8",
-    "cdp_id": "2cc4ebee-527a-4af0-bcba-47fdd75124f5",
+    "serial_id": "55ea9792-3b79-4486-b85f-a695f4b43ed4",
+    "cdp_id": "a09149bc-8c4e-4211-82e8-1874c1092b65",
     "message": "QR+CDP generated successfully for product PRODUCT22"
   },
   {
     "success": true,
     "product_id": "PRODUCT23",
-    "serial_id": "5200d0df-4510-408a-85fb-a6cc6c5f8807",
-    "cdp_id": "186323a6-d9a7-40fc-a4fc-88bd0f1199d4",
+    "serial_id": "41087a8f-f2d8-4b3e-8fa3-4203065f904e",
+    "cdp_id": "6fa3d6e5-da0f-4b5e-b35b-5572b229953b",
     "message": "QR+CDP generated successfully for product PRODUCT23"
   },
   {
     "success": true,
     "product_id": "PRODUCT24",
-    "serial_id": "bc15b7c8-ab80-49ea-a02a-7fa8bfb1ed95",
-    "cdp_id": "9925d8b8-214c-4f78-b721-f628c42260db",
+    "serial_id": "0203b07c-25ea-4d35-a95e-27385ecb9d4f",
+    "cdp_id": "2b14ef16-7a20-43de-965c-5f95558a69a4",
     "message": "QR+CDP generated successfully for product PRODUCT24"
   },
   {
     "success": true,
     "product_id": "PRODUCT25",
-    "serial_id": "020c3629-1cbd-4fd8-96ef-3ee57d1ad251",
-    "cdp_id": "ac3faba0-8e6b-4726-993c-f850f8021df7",
+    "serial_id": "1819a9b5-63c6-43d2-b7d2-1166385b0032",
+    "cdp_id": "13755dcf-33b6-4283-9b0e-6d7809872521",
     "message": "QR+CDP generated successfully for product PRODUCT25"
   },
   {
     "success": true,
     "product_id": "PRODUCT26",
-    "serial_id": "b5d8acec-7ec6-4284-b737-c96ba050a0bd",
-    "cdp_id": "f6a7bce8-0ea3-403c-8596-1558e9a0c2e7",
+    "serial_id": "7ea273c6-8fba-4cc3-ae76-6857050cc3e4",
+    "cdp_id": "711ab93e-0002-45aa-a7c6-c9c40b720554",
     "message": "QR+CDP generated successfully for product PRODUCT26"
   },
   {
     "success": true,
     "product_id": "PRODUCT27",
-    "serial_id": "b0e16959-0202-4e88-9778-69527e7bb431",
-    "cdp_id": "79eaceae-8975-465b-a0ff-3f1082e37c57",
+    "serial_id": "0674aef5-5c05-4f7c-8a86-1ab3c9717ed4",
+    "cdp_id": "e08f7bbf-f6ea-428c-963b-fd1ff32ac8bf",
     "message": "QR+CDP generated successfully for product PRODUCT27"
   },
   {
     "success": true,
     "product_id": "PRODUCT28",
-    "serial_id": "af6ce0af-4154-4ee4-b730-8a7423bde547",
-    "cdp_id": "4278bd4a-4870-4b03-a35a-69eb1f5a1a53",
+    "serial_id": "4c9ad5b6-6b81-4373-9144-528ab67482a5",
+    "cdp_id": "8c780676-e950-4b90-9ee3-a1b959a2fea1",
     "message": "QR+CDP generated successfully for product PRODUCT28"
   },
   {
     "success": true,
     "product_id": "PRODUCT29",
-    "serial_id": "39df75b5-a53d-4c59-9fa9-5966cd53819e",
-    "cdp_id": "ac1458d9-7450-4239-b11a-6d8d832057a3",
+    "serial_id": "c8de2cf8-c50f-47ee-ad81-3a645dfcf155",
+    "cdp_id": "63a67e4b-da74-478b-bd31-99360cdc9aa1",
     "message": "QR+CDP generated successfully for product PRODUCT29"
   },
   {
     "success": true,
     "product_id": "PRODUCT30",
-    "serial_id": "12493556-9a9c-4059-87df-40b3aff91abe",
-    "cdp_id": "7c65ca47-c8b4-4423-9c34-40b4a5b83085",
+    "serial_id": "dbb67f21-4406-4493-8f90-e17bf68b2851",
+    "cdp_id": "33ded492-34db-4220-83e3-38160a109bcf",
     "message": "QR+CDP generated successfully for product PRODUCT30"
   },
   {
     "success": true,
     "product_id": "PRODUCT31",
-    "serial_id": "34a875cb-3f0c-40eb-acf5-ff4f38021382",
-    "cdp_id": "c17f5965-af7e-4d48-b5c1-15eecb29b777",
+    "serial_id": "6c8dbab5-c08b-455e-a650-3714142376c0",
+    "cdp_id": "c89f7c66-ae5d-41d0-af7d-c188831e60d4",
     "message": "QR+CDP generated successfully for product PRODUCT31"
   },
   {
     "success": true,
     "product_id": "PRODUCT32",
-    "serial_id": "d7586d0e-edee-44ba-924b-5edadc9852b7",
-    "cdp_id": "174d2cfc-7a20-40c8-82b3-df98186fb5a8",
+    "serial_id": "58814a87-fecd-4ec9-a270-d5d808913855",
+    "cdp_id": "1b365967-3166-439e-a513-2eee7af609e0",
     "message": "QR+CDP generated successfully for product PRODUCT32"
   },
   {
     "success": true,
     "product_id": "PRODUCT33",
-    "serial_id": "42eeda92-d010-4635-a2e1-6d62d06883ea",
-    "cdp_id": "534710cb-ff60-49a0-8f93-000e440c851a",
+    "serial_id": "d898a34b-0c13-4a5b-9046-0eead2febfdf",
+    "cdp_id": "0e708775-72ab-424e-bcb1-1ab026574bde",
     "message": "QR+CDP generated successfully for product PRODUCT33"
   },
   {
     "success": true,
     "product_id": "PRODUCT34",
-    "serial_id": "e48008c3-a538-4a38-9431-30009aedaef3",
-    "cdp_id": "1128a0b4-cbdc-4161-bb8c-e5e240b9d16e",
+    "serial_id": "d4ee7d20-33fb-4787-a929-5ea6cccfddcf",
+    "cdp_id": "ee571530-d9de-4506-a96c-703178429e3e",
     "message": "QR+CDP generated successfully for product PRODUCT34"
   },
   {
     "success": true,
     "product_id": "PRODUCT35",
-    "serial_id": "b16cae0d-b224-4c2a-b06a-9be3d2d7d59c",
-    "cdp_id": "7af1db34-5122-43c2-ada9-558ece4487fd",
+    "serial_id": "0d6f4880-9869-48bc-a3c5-56945834ea6a",
+    "cdp_id": "27109903-c840-42e7-8705-7a2a37b83cb8",
     "message": "QR+CDP generated successfully for product PRODUCT35"
   },
   {
     "success": true,
     "product_id": "PRODUCT36",
-    "serial_id": "a2407bcd-4b89-44f6-a516-4514e76b8082",
-    "cdp_id": "645541e8-11a7-44c9-a030-cbd53d13479b",
+    "serial_id": "99211723-d821-416b-937f-c8fdaa1c9051",
+    "cdp_id": "2e50da08-9607-4290-8856-5e927c641b22",
     "message": "QR+CDP generated successfully for product PRODUCT36"
   },
   {
     "success": true,
     "product_id": "PRODUCT37",
-    "serial_id": "0827fe8d-20d2-42e5-9c6f-956f2cd415c6",
-    "cdp_id": "b9192409-bf5e-43b2-8c1c-1bae5be65c8a",
+    "serial_id": "95579581-dbdd-41b9-b78e-cab1e1819ded",
+    "cdp_id": "ba9a29e2-7f30-4b3c-a317-5dc43e27534d",
     "message": "QR+CDP generated successfully for product PRODUCT37"
   },
   {
     "success": true,
     "product_id": "PRODUCT38",
-    "serial_id": "2d5fe6f2-3ab3-490a-b2cc-318f554ab218",
-    "cdp_id": "7c2c0f11-13bd-439c-9f8a-bd01a3f8bd80",
+    "serial_id": "9226cc56-0552-4b27-8182-ff1c8237db07",
+    "cdp_id": "8c13bdfb-02b5-408a-aecc-ca76e1f36ea7",
     "message": "QR+CDP generated successfully for product PRODUCT38"
   },
   {
     "success": true,
     "product_id": "PRODUCT39",
-    "serial_id": "9e1b0929-bee3-4e34-8c37-acc8ca1f53f1",
-    "cdp_id": "d509718e-fffb-48ac-bf90-87c5f45142a9",
+    "serial_id": "dba965d4-6681-4936-a5ec-c88dc9e71fd0",
+    "cdp_id": "b6788b9c-b62d-4528-a1b7-0d248a7d3851",
     "message": "QR+CDP generated successfully for product PRODUCT39"
   },
   {
     "success": true,
     "product_id": "PRODUCT40",
-    "serial_id": "5fb04d51-48c9-4c38-8349-b80e0a18a2d3",
-    "cdp_id": "5ecd6118-b190-4d38-b104-ee2f594f3e84",
+    "serial_id": "be0c1302-5806-4d67-ba08-f4a01bc55e5c",
+    "cdp_id": "c9b71f8d-096f-4b0d-ad5e-dfcfdb462161",
     "message": "QR+CDP generated successfully for product PRODUCT40"
   },
   {
     "success": true,
     "product_id": "PRODUCT41",
-    "serial_id": "e15304c7-edd4-4e31-9be3-8b02b2e7bbb6",
-    "cdp_id": "fc14d17b-492b-41ce-a3ae-4d00de83ba64",
+    "serial_id": "a32c95b4-cf60-48da-ad15-01e3e0e4aac2",
+    "cdp_id": "720b19d8-8621-48a1-8508-9d95a68314df",
     "message": "QR+CDP generated successfully for product PRODUCT41"
   },
   {
     "success": true,
     "product_id": "PRODUCT42",
-    "serial_id": "404e5c98-c663-4dbe-97ee-a7e4a42ed54f",
-    "cdp_id": "4f49aa96-7b9c-4eae-833b-c59b05f5c50d",
+    "serial_id": "2defb3ea-4871-40d5-ba01-dfe18eba135f",
+    "cdp_id": "504d8db9-d1b7-4ac6-a2cf-dd372d970d14",
     "message": "QR+CDP generated successfully for product PRODUCT42"
   },
   {
     "success": true,
     "product_id": "PRODUCT43",
-    "serial_id": "f13e001d-52af-4290-9655-f7504e0cb04e",
-    "cdp_id": "504cad81-9daa-4854-a696-f8989646c6a2",
+    "serial_id": "4dd89986-e81c-448f-b7fd-6f5c49f32bb9",
+    "cdp_id": "4ec0559d-4be6-4b74-bb8e-b23f24461110",
     "message": "QR+CDP generated successfully for product PRODUCT43"
   },
   {
     "success": true,
     "product_id": "PRODUCT44",
-    "serial_id": "3262da51-b5e1-41b7-aa6f-2957bc3f78a6",
-    "cdp_id": "67652226-b9d3-41bd-ad1c-a5bb43f66036",
+    "serial_id": "7beba26e-e9ea-4222-92b7-423206b4ffd2",
+    "cdp_id": "e6d53ab5-d9b3-4679-9e89-30d33ad93dfe",
     "message": "QR+CDP generated successfully for product PRODUCT44"
   },
   {
     "success": true,
     "product_id": "PRODUCT45",
-    "serial_id": "19da2288-4f0a-451e-883e-dcd3ad7a3d8e",
-    "cdp_id": "548f2b7d-31fd-476b-87fd-b91f22b63d31",
+    "serial_id": "2d201b76-94b4-4384-871f-3dd2513a77cf",
+    "cdp_id": "1d443469-2460-46b9-bbb8-4d73ede53fb0",
     "message": "QR+CDP generated successfully for product PRODUCT45"
   },
   {
     "success": true,
     "product_id": "PRODUCT46",
-    "serial_id": "589d7d56-7d91-4682-866b-0b543876932b",
-    "cdp_id": "55f742d5-2e2f-473e-b10b-a4907c7e3ec8",
+    "serial_id": "53279e9d-010e-44cf-9335-854fc5dc66f1",
+    "cdp_id": "74503af9-249a-4bd6-bb53-9cf25395dccc",
     "message": "QR+CDP generated successfully for product PRODUCT46"
   },
   {
     "success": true,
     "product_id": "PRODUCT47",
-    "serial_id": "15bae7e0-2d33-4676-b7f3-e91a4388358d",
-    "cdp_id": "753775ae-45d3-4d15-95b5-189065b9ebd1",
+    "serial_id": "d41d177c-753f-4864-b2c8-ca0f1d1ce538",
+    "cdp_id": "114b3ef6-3233-43da-8bce-180167fd2db5",
     "message": "QR+CDP generated successfully for product PRODUCT47"
   },
   {
     "success": true,
     "product_id": "PRODUCT48",
-    "serial_id": "524ebdd9-c4a7-4991-be99-dbedb348f818",
-    "cdp_id": "9ace3ab7-aa31-40f2-b04a-df4f61631d4d",
+    "serial_id": "297ffd40-5263-48d5-b57c-78962ff23357",
+    "cdp_id": "3878624a-ff0e-4ae7-9d7a-c7ebebab4b74",
     "message": "QR+CDP generated successfully for product PRODUCT48"
   },
   {
     "success": true,
     "product_id": "PRODUCT49",
-    "serial_id": "04c3d3d6-316f-474a-9d4c-efe840c13bfc",
-    "cdp_id": "facabf05-0f92-41ce-b816-2772e7fc74f3",
+    "serial_id": "066108f7-493a-47fe-8485-bfcfa7bd088e",
+    "cdp_id": "2d6f7eb5-d001-4d86-940e-9c33fd903ad4",
     "message": "QR+CDP generated successfully for product PRODUCT49"
   },
   {
     "success": true,
     "product_id": "PRODUCT50",
-    "serial_id": "ed2a893d-7e02-4897-b16b-d52bd2453774",
-    "cdp_id": "7995afc7-c4b8-4d01-9168-2bd3ce363436",
+    "serial_id": "fa7d86e6-038c-4ea3-94e6-d630062530ba",
+    "cdp_id": "1b0638e5-933f-436e-8a99-5f62967ff103",
     "message": "QR+CDP generated successfully for product PRODUCT50"
   }
 ]

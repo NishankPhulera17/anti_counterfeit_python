@@ -328,12 +328,15 @@ def decode_qr_code(image, require_quality=True, save_folder=None):
     # 1. Try zxing-cpp (The requested library - Fast & Robust)
     try:
         import zxingcpp
+        print("[INFO] Attempting QR code detection with library: zxing-cpp (original image)", flush=True)
         # zxing-cpp works best with the direct numpy array or grayscale
         results = zxingcpp.read_barcodes(image)
         if results:
             for result in results:
-                print(f"[INFO] Successfully decoded QR code (zxing-cpp): {result.text}", flush=True)
+                print(f"[INFO] Successfully decoded QR code using library: zxing-cpp (original image): {result.text}", flush=True)
                 return result.text
+        else:
+            print("[DEBUG] zxing-cpp (original image) - no QR code detected", flush=True)
     except ImportError:
         print("[WARNING] zxing-cpp not installed. Falling back to other detectors.", flush=True)
     except Exception as e:
@@ -371,6 +374,7 @@ def decode_qr_code(image, require_quality=True, save_folder=None):
         detectors.append("pyzbar")
     detectors.append("opencv")
     
+    print(f"[INFO] Available QR detection libraries for fallback: {', '.join(detectors)}", flush=True)
     detector_opencv = cv2.QRCodeDetector()
 
     for detector_name in detectors:
@@ -391,58 +395,65 @@ def decode_qr_code(image, require_quality=True, save_folder=None):
                 try:
                     if detector_name == "zxing-cpp":
                         # zxing-cpp handles rotations internally usually, but explicit rotation helps in extreme cases
+                        print(f"[INFO] Attempting QR code detection with library: zxing-cpp (image: {img_name}, rotation: {angle}°)", flush=True)
                         results = zxingcpp.read_barcodes(rotated)
                         if results:
                             data = results[0].text
-                            print(f"[INFO] Successfully decoded QR (zxing-cpp) on {img_name} {angle}°: {data}", flush=True)
+                            print(f"[INFO] Successfully decoded QR using library: zxing-cpp (image: {img_name}, rotation: {angle}°): {data}", flush=True)
                             return data
                             
                     elif detector_name == "pyzbar":
+                        print(f"[INFO] Attempting QR code detection with library: pyzbar (image: {img_name}, rotation: {angle}°)", flush=True)
                         with suppress_stderr():
                             decoded = pyzbar_decode(rotated)
                         if decoded:
                             data = decoded[0].data.decode("utf-8")
-                            print(f"[INFO] Successfully decoded QR (pyzbar) on {img_name} {angle}°: {data}", flush=True)
+                            print(f"[INFO] Successfully decoded QR using library: pyzbar (image: {img_name}, rotation: {angle}°): {data}", flush=True)
                             return data
                             
                     elif detector_name == "opencv":
+                        print(f"[INFO] Attempting QR code detection with library: opencv (image: {img_name}, rotation: {angle}°)", flush=True)
                         data, _, _ = detector_opencv.detectAndDecode(rotated)
                         if data:
-                            print(f"[INFO] Successfully decoded QR (OpenCV) on {img_name} {angle}°: {data}", flush=True)
+                            print(f"[INFO] Successfully decoded QR using library: opencv (image: {img_name}, rotation: {angle}°): {data}", flush=True)
                             return data
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(f"[DEBUG] QR detection failed with library: {detector_name} (image: {img_name}, rotation: {angle}°): {str(e)}", flush=True)
 
     # 3. Crop Red Border (Last Resort for Cards)
     try:
         from services.cdp_service import detect_yellow_border
         cropped = detect_yellow_border(image.copy())
         if cropped.shape != image.shape:
+            print("[INFO] Attempting QR code detection on cropped image (border removed)", flush=True)
              # Try zxing on cropped
             try:
                 import zxingcpp
+                print("[INFO] Attempting QR code detection with library: zxing-cpp (cropped image)", flush=True)
                 results = zxingcpp.read_barcodes(cropped)
                 if results:
-                    print(f"[INFO] Successfully decoded QR from card (zxing-cpp): {results[0].text}", flush=True)
+                    print(f"[INFO] Successfully decoded QR using library: zxing-cpp (cropped image): {results[0].text}", flush=True)
                     return results[0].text
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"[DEBUG] zxing-cpp (cropped image) failed: {str(e)}", flush=True)
                 
             # Try others on cropped...
             cropped_gray = cv2.cvtColor(cropped, cv2.COLOR_BGR2GRAY) if len(cropped.shape) == 3 else cropped
             if PYZBAR_AVAILABLE and pyzbar_decode:
-                 with suppress_stderr():
-                     decoded = pyzbar_decode(cropped_gray)
-                 if decoded:
-                     print(f"[INFO] Successfully decoded QR from card (pyzbar): {decoded[0].data.decode('utf-8')}", flush=True)
-                     return decoded[0].data.decode("utf-8")
+                print("[INFO] Attempting QR code detection with library: pyzbar (cropped image)", flush=True)
+                with suppress_stderr():
+                    decoded = pyzbar_decode(cropped_gray)
+                if decoded:
+                    print(f"[INFO] Successfully decoded QR using library: pyzbar (cropped image): {decoded[0].data.decode('utf-8')}", flush=True)
+                    return decoded[0].data.decode("utf-8")
             
+            print("[INFO] Attempting QR code detection with library: opencv (cropped image)", flush=True)
             data, _, _ = detector_opencv.detectAndDecode(cropped)
             if data:
-                print(f"[INFO] Successfully decoded QR from card (OpenCV): {data}", flush=True)
+                print(f"[INFO] Successfully decoded QR using library: opencv (cropped image): {data}", flush=True)
                 return data
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[DEBUG] Cropped image QR detection failed: {str(e)}", flush=True)
 
     print("[WARNING] Could not decode QR code from image (tried zxing-cpp, pyzbar, opencv)", flush=True)
     return None

@@ -2,14 +2,15 @@
 """
 Script to generate multiple QR+CDP images in batch.
 Generates QR+CDP for product IDs from product0 to product4 (5 products).
-Generates only 28×14mm size at 2400 DPI.
+Generates only 28×14mm size at 1200 DPI for Heidelberg printer.
+Physical size: 28mm width × 14mm height (landscape orientation)
 """
 
 from generate_qr_cdp import generate_qr_cdp
 import os
 
-# Generate only 28x14mm size
-width_mm, height_mm, dpi, size_name = 28, 14, 2400, "28x14"
+# Generate only 28x14mm size at 1200 DPI
+width_mm, height_mm, dpi, size_name = 28, 14, 1200, "28x14"
 
 def main():
     total_generated = 0
@@ -40,7 +41,7 @@ def main():
     
     print(f"\n{'='*60}")
     print(f"[INFO] Batch generation complete! Generated {total_generated} QR+CDP images.")
-    print(f"[INFO] All images are 28×14mm size")
+    print(f"[INFO] All images are {width_mm}×{height_mm}mm size")
     print(f"{'='*60}")
 
 if __name__ == "__main__":

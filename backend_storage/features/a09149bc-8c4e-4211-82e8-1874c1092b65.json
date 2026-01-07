@@ -1,0 +1,44 @@
+{
+  "cdp_id": "a09149bc-8c4e-4211-82e8-1874c1092b65",
+  "product_id": "PRODUCT22",
+  "serial_id": "55ea9792-3b79-4486-b85f-a695f4b43ed4",
+  "features": {
+    "freq_low": 0.9975829124450684,
+    "freq_medium_low": 0.0004290005308575928,
+    "freq_medium": 0.0005100072012282908,
+    "freq_medium_high": 0.0007407221710309386,
+    "freq_high": 0.0007371777901425958,
+    "freq_low_to_medium": 1952.189538713372,
+    "freq_medium_to_high": 0.6909002249035037,
+    "freq_medium_high_to_high": 1.003446840208849,
+    "freq_total_high_freq_ratio": 3.2620444414505902e-18,
+    "edge_edge_density": 0.24999734308244947,
+    "edge_edge_strength_mean": 123.97646692416836,
+    "edge_edge_strength_std": 103.05345172398023,
+    "edge_edge_strength_max": 972.2602532244132,
+    "edge_edge_pixel_density": 0.3686685654770761,
+    "edge_edge_pixel_count": 138758,
+    "texture_lbp_uniformity": 0.019769735634326935,
+    "texture_lbp_entropy": 7.060352325439453,
+    "texture_lbp_top_5_values": [
+      0.09543010592460632,
+      0.07424475252628326,
+      0.016065027564764023,
+      0.015937019139528275,
+      0.015296978875994682
+    ],
+    "texture_lbp_top_5_indices": [
+      255,
+      0,
+      247,
+      127,
+      239
+    ],
+    "mean_brightness": 231.6687275490467,
+    "std_brightness": 33.30744971870369,
+    "image_height": 611,
+    "image_width": 616
+  },
+  "created_at": "2026-01-07T07:47:32.301502",
+  "updated_at": "2026-01-07T07:47:32.301508"
+}
