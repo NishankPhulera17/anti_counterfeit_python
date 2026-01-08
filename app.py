@@ -527,7 +527,3 @@ def verify_cdp():
             response['training_data_error'] = "Failed to save training data to CSV"
 
     return jsonify(response)
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8000)
-
