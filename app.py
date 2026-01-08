@@ -199,6 +199,12 @@ def verify_cdp():
     lighting_condition = data.get('lighting_condition')  # Optional: "bright", "normal", "dim", "low"
     request_product_id = data.get('product_id')  # Optional: product_id from request
     
+    # Extract device information (optional)
+    device_manufacturer = data.get('device_manufacturer')  # Optional: e.g., "Apple", "Samsung"
+    device_model = data.get('device_model')  # Optional: e.g., "iPhone 13", "Galaxy S21"
+    device_os = data.get('device_os')  # Optional: e.g., "iOS 15.0", "Android 12"
+    camera_megapixels = data.get('camera_megapixels')  # Optional: e.g., 12.0
+    
     # cdp_image is required
     if not cdp_base64:
         return jsonify({
@@ -494,6 +500,14 @@ def verify_cdp():
         response['lighting_condition'] = str(lighting_condition)
     if request_product_id is not None:
         response['request_product_id'] = str(request_product_id)
+    if device_manufacturer is not None:
+        response['device_manufacturer'] = str(device_manufacturer)
+    if device_model is not None:
+        response['device_model'] = str(device_model)
+    if device_os is not None:
+        response['device_os'] = str(device_os)
+    if camera_megapixels is not None:
+        response['camera_megapixels'] = float(camera_megapixels)
     
     # Add training metrics to response if extracted
     if training_metrics is not None:
@@ -510,12 +524,16 @@ def verify_cdp():
         else:
             lighting = lighting_assessment.get('lighting_info', {}).get('status', 'normal')
         
-        # Append to CSV
+        # Append to CSV with device information
         csv_saved = append_to_training_csv(
             metrics=training_metrics,
             lighting_condition=lighting,
             label=label,
-            csv_path="training_data/sample_data.csv"
+            csv_path="training_data/sample_data.csv",
+            device_manufacturer=device_manufacturer,
+            device_model=device_model,
+            device_os=device_os,
+            camera_megapixels=camera_megapixels
         )
         
         if csv_saved:
