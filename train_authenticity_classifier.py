@@ -36,6 +36,12 @@ def load_training_data(filepath: str) -> list:
     
     df = pd.read_csv(filepath)
     
+    # Map labels: 'fake' and 'photocopy' -> 'duplicate' for binary classification
+    if 'Label' in df.columns:
+        df['Label'] = df['Label'].replace({'fake': 'duplicate', 'photocopy': 'duplicate'})
+        print(f"[INFO] Label mapping: 'fake' and 'photocopy' -> 'duplicate'")
+        print(f"[INFO] Label distribution: {df['Label'].value_counts().to_dict()}")
+    
     # Convert DataFrame to list of dictionaries
     training_data = []
     for _, row in df.iterrows():

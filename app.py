@@ -4,6 +4,7 @@ from services.feature_extraction import extract_all_features, compare_features
 from services.backend_storage import get_backend_storage
 from services.metric_extraction import extract_all_metrics
 from services.training_data_collector import append_to_training_csv
+from services.authenticity_classifier import get_classifier
 from utils.image_utils import base64_to_image, decode_qr_code, analyze_image_statistics
 from dotenv import load_dotenv
 import numpy as np
@@ -321,6 +322,9 @@ def verify_cdp():
     except Exception as e:
         print(f"[WARNING] Failed to extract training metrics: {str(e)}", flush=True)
     
+    # ML Model Prediction (will be updated after lighting assessment)
+    ml_prediction = None
+    
     # Step 5: Compare features using scored classification
     similarity_score = compare_features(reference_features, scanned_features)
     print(f"[INFO] Feature similarity score: {similarity_score:.3f}", flush=True)
@@ -364,6 +368,47 @@ def verify_cdp():
     distance_check = liveness_service.check_scanning_frame_distance(cdp_img)
     lighting_assessment = liveness_service.assess_lighting_conditions(cdp_img)
     size_assessment = liveness_service.detect_qr_code_size(cdp_img)
+    
+    # ML Model Prediction (now that we have lighting assessment)
+    if training_metrics is not None:
+        try:
+            # Determine lighting condition for ML model
+            # Use provided lighting_condition, or map from lighting_assessment
+            if lighting_condition is not None:
+                ml_lighting = lighting_condition
+            else:
+                # Map lighting_assessment status to ML model format
+                lighting_status = lighting_assessment.get('lighting_info', {}).get('status', 'normal')
+                brightness = lighting_assessment.get('lighting_info', {}).get('brightness', 100)
+                
+                # Map status to ML model expected values: 'bright', 'normal', 'dim', 'low'
+                if lighting_status == 'good':
+                    ml_lighting = 'bright' if brightness > 150 else 'normal'
+                elif lighting_status == 'fair':
+                    ml_lighting = 'normal' if brightness > 100 else 'dim'
+                else:  # poor
+                    ml_lighting = 'dim' if brightness > 50 else 'low'
+            
+            # Prepare metrics dictionary for ML model
+            ml_metrics = training_metrics.copy()
+            ml_metrics['LightingCondition'] = ml_lighting
+            
+            # Load and use ML classifier
+            try:
+                classifier = get_classifier(
+                    model_type='random_forest',
+                    model_path='models/authenticity_classifier_random_forest.pkl'
+                )
+                ml_prediction = classifier.predict_single(ml_metrics)
+                print(f"[ML] Prediction: {ml_prediction['prediction']}, Confidence: {ml_prediction['confidence']:.2f}%", flush=True)
+            except Exception as e:
+                print(f"[WARNING] ML prediction failed: {str(e)}", flush=True)
+                import traceback
+                traceback.print_exc()
+        except Exception as e:
+            print(f"[WARNING] ML prediction error: {str(e)}", flush=True)
+            import traceback
+            traceback.print_exc()
     
     print(f"[INFO] Verification complete for product_id: {product_id} (from backend lookup)", flush=True)
     
@@ -492,6 +537,15 @@ def verify_cdp():
             'warnings': size_assessment.get('warnings', [])
         }
     }
+    
+    # Add ML prediction to response
+    if ml_prediction is not None:
+        response['ml_prediction'] = {
+            'prediction': ml_prediction['prediction'],  # 'real' or 'duplicate'
+            'confidence': float(ml_prediction['confidence']),  # 0-100
+            'is_authentic': bool(ml_prediction['is_authentic']),
+            'probabilities': ml_prediction['probabilities']  # {'real': 0.85, 'duplicate': 0.15}
+        }
     
     # Append optional parameters from request body to response
     if label_condition is not None:
