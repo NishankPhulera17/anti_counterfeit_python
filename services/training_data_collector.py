@@ -11,11 +11,7 @@ from pathlib import Path
 def append_to_training_csv(metrics: Dict[str, float], 
                           lighting_condition: str,
                           label: str,
-                          csv_path: str = "training_data/sample_data.csv",
-                          device_manufacturer: Optional[str] = None,
-                          device_model: Optional[str] = None,
-                          device_os: Optional[str] = None,
-                          camera_megapixels: Optional[float] = None) -> bool:
+                          csv_path: str = "training_data/sample_data.csv") -> bool:
     """
     Append a new training sample to the CSV file.
     
@@ -24,10 +20,6 @@ def append_to_training_csv(metrics: Dict[str, float],
         lighting_condition: Lighting condition ("bright", "normal", "dim", "low")
         label: Label ("real" or "duplicate")
         csv_path: Path to CSV file (relative or absolute)
-        device_manufacturer: Optional device manufacturer (e.g., "Apple", "Samsung")
-        device_model: Optional device model (e.g., "iPhone 13", "Galaxy S21")
-        device_os: Optional device OS (e.g., "iOS 15.0", "Android 12")
-        camera_megapixels: Optional camera megapixels (e.g., 12.0)
     
     Returns:
         True if successful, False otherwise
@@ -62,11 +54,7 @@ def append_to_training_csv(metrics: Dict[str, float],
             'DynamicRange': metrics.get('DynamicRange', 0.0),
             'Brightness': metrics.get('Brightness', 0.0),
             'LightingCondition': lighting_condition,
-            'Label': label,
-            'DeviceManufacturer': device_manufacturer if device_manufacturer is not None else '',
-            'DeviceModel': device_model if device_model is not None else '',
-            'DeviceOS': device_os if device_os is not None else '',
-            'CameraMegapixels': camera_megapixels if camera_megapixels is not None else ''
+            'Label': label
         }
         
         # Check if file exists

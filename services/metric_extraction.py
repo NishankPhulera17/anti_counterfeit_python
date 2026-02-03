@@ -278,14 +278,15 @@ def extract_brightness(image: np.ndarray) -> float:
 
 def extract_all_metrics(image: np.ndarray) -> Dict[str, float]:
     """
-    Extract all 15 metrics from a CDP image.
+    Extract all 15 base metrics from a CDP image.
     
     Args:
         image: CDP image in BGR format (OpenCV format)
     
     Returns:
-        Dictionary with all 15 metrics
+        Dictionary with all 15 base metrics
     """
+    # Extract base metrics
     metrics = {
         'Sharpness': extract_sharpness(image),
         'Contrast': extract_contrast(image),
@@ -305,4 +306,6 @@ def extract_all_metrics(image: np.ndarray) -> Dict[str, float]:
     }
     
     return metrics
+
+
 

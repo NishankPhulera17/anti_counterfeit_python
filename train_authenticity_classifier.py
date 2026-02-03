@@ -24,10 +24,13 @@ def load_training_data(filepath: str) -> list:
     Load training data from CSV file.
     
     Expected CSV columns:
+    Base metrics (required):
     - Sharpness, Contrast, HistogramPeak, EdgeDensity, EdgeStrength
     - NoiseLevel, HighFreqEnergy, ColorDiversity, UniqueColors
     - Saturation, TextureUniformity, CompressionArtifacts
     - HistogramEntropy, DynamicRange, Brightness
+    
+    Metadata:
     - LightingCondition (bright/normal/dim/low)
     - Label (real/duplicate)
     """
@@ -93,7 +96,7 @@ def main():
     parser = argparse.ArgumentParser(description='Train Authenticity Classifier')
     parser.add_argument('--data', type=str, default=DEFAULT_TRAINING_DATA,
                        help='Path to training data CSV file')
-    parser.add_argument('--model-type', type=str, default='random_forest',
+    parser.add_argument('--model-type', type=str, default='xgboost',
                        choices=['random_forest', 'xgboost'],
                        help='Model type to train')
     parser.add_argument('--output', type=str, default=None,
@@ -133,12 +136,14 @@ def main():
         'LightingCondition', 'Label'
     ]
     
+    
     # Check if all required columns are present
     sample = training_data[0]
     missing = [m for m in required_metrics if m not in sample]
     if missing:
         print(f"[ERROR] Missing required metrics: {missing}")
         sys.exit(1)
+    
     
     # Initialize classifier
     print(f"\n[INFO] Initializing {args.model_type} classifier...")

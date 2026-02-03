@@ -30,7 +30,7 @@ def train_model():
     print(f"[INFO] Loaded {len(training_data)} samples.")
 
     # 3. Initialize Classifier
-    classifier = AuthenticityClassifier(model_type='random_forest')
+    classifier = AuthenticityClassifier(model_type='xgboost')
 
     # 4. Train
     # We use a very small test_size or even 0 for this tiny sample, 
@@ -51,7 +51,7 @@ def train_model():
 
     # 5. Save Model
     os.makedirs('models', exist_ok=True)
-    classifier.save('models/authenticity_classifier_random_forest.pkl')
+    classifier.save('models/authenticity_classifier_xgboost.pkl')
 
 if __name__ == "__main__":
     train_model()

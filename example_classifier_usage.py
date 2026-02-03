@@ -11,7 +11,7 @@ def example_1_load_and_predict():
     """Load trained model and make predictions"""
     
     # Path to your trained model
-    model_path = "models/authenticity_classifier_random_forest.pkl"
+    model_path = "models/authenticity_classifier_xgboost.pkl"
     
     if not os.path.exists(model_path):
         print(f"[ERROR] Model not found at {model_path}")
@@ -72,8 +72,8 @@ from services.authenticity_classifier import get_classifier
 
 # Load classifier (lazy loading, cached after first call)
 classifier = get_classifier(
-    model_type='random_forest',
-    model_path='models/authenticity_classifier_random_forest.pkl'
+    model_type='xgboost',
+    model_path='models/authenticity_classifier_xgboost.pkl'
 )
 
 # Prepare metrics dictionary
@@ -109,7 +109,7 @@ if not ml_result['is_authentic']:
 def example_3_batch_prediction():
     """Predict on multiple images"""
     
-    model_path = "models/authenticity_classifier_random_forest.pkl"
+    model_path = "models/authenticity_classifier_xgboost.pkl"
     classifier = AuthenticityClassifier(model_path=model_path)
     
     # List of metrics from multiple images

@@ -317,8 +317,27 @@ def verify_cdp():
     training_metrics = None
     try:
         training_metrics = extract_all_metrics(scanned_cdp)
-        print(f"[METRICS] Training metrics for serial_id={serial_id}: {training_metrics}", flush=True)
         print(f"[INFO] Extracted training metrics", flush=True)
+        # Log all features in detail
+        print(f"\n{'='*60}", flush=True)
+        print(f"[FEATURES] All Extracted Features for serial_id={serial_id}:", flush=True)
+        print(f"{'='*60}", flush=True)
+        print(f"  Sharpness:              {training_metrics.get('Sharpness', 0):.6f}", flush=True)
+        print(f"  Contrast:                {training_metrics.get('Contrast', 0):.6f}", flush=True)
+        print(f"  HistogramPeak:           {training_metrics.get('HistogramPeak', 0):.6f}", flush=True)
+        print(f"  EdgeDensity:             {training_metrics.get('EdgeDensity', 0):.6f}", flush=True)
+        print(f"  EdgeStrength:            {training_metrics.get('EdgeStrength', 0):.6f}", flush=True)
+        print(f"  NoiseLevel:              {training_metrics.get('NoiseLevel', 0):.6f}", flush=True)
+        print(f"  HighFreqEnergy:          {training_metrics.get('HighFreqEnergy', 0):.2f}", flush=True)
+        print(f"  ColorDiversity:          {training_metrics.get('ColorDiversity', 0):.6f}", flush=True)
+        print(f"  UniqueColors:            {int(training_metrics.get('UniqueColors', 0))}", flush=True)
+        print(f"  Saturation:              {training_metrics.get('Saturation', 0):.6f}", flush=True)
+        print(f"  TextureUniformity:       {training_metrics.get('TextureUniformity', 0):.6f}", flush=True)
+        print(f"  CompressionArtifacts:    {training_metrics.get('CompressionArtifacts', 0):.6f}", flush=True)
+        print(f"  HistogramEntropy:        {training_metrics.get('HistogramEntropy', 0):.6f}", flush=True)
+        print(f"  DynamicRange:            {training_metrics.get('DynamicRange', 0):.6f}", flush=True)
+        print(f"  Brightness:              {training_metrics.get('Brightness', 0):.6f}", flush=True)
+        print(f"{'='*60}\n", flush=True)
     except Exception as e:
         print(f"[WARNING] Failed to extract training metrics: {str(e)}", flush=True)
     
@@ -400,7 +419,23 @@ def verify_cdp():
                     model_path='models/authenticity_classifier_random_forest.pkl'
                 )
                 ml_prediction = classifier.predict_single(ml_metrics)
-                print(f"[ML] Prediction: {ml_prediction['prediction']}, Confidence: {ml_prediction['confidence']:.2f}%", flush=True)
+                
+                # Log ML prediction with real/duplicate tag prominently
+                prediction_label = ml_prediction.get('prediction', 'unknown').upper()
+                confidence = ml_prediction.get('confidence', 0.0)
+                is_authentic_ml = ml_prediction.get('is_authentic', False)
+                
+                print(f"\n{'='*60}", flush=True)
+                print(f"[ML PREDICTION] Image Classification Result:", flush=True)
+                print(f"{'='*60}", flush=True)
+                print(f"  Tag:                    {prediction_label}", flush=True)
+                print(f"  Status:                 {'REAL' if is_authentic_ml else 'DUPLICATE'}", flush=True)
+                print(f"  Confidence:             {confidence:.2f}%", flush=True)
+                if 'probabilities' in ml_prediction:
+                    probs = ml_prediction['probabilities']
+                    print(f"  Probability (real):     {probs.get('real', probs.get('1', 0)):.4f}", flush=True)
+                    print(f"  Probability (duplicate): {probs.get('duplicate', probs.get('0', 0)):.4f}", flush=True)
+                print(f"{'='*60}\n", flush=True)
             except Exception as e:
                 print(f"[WARNING] ML prediction failed: {str(e)}", flush=True)
                 import traceback
@@ -578,16 +613,12 @@ def verify_cdp():
         else:
             lighting = lighting_assessment.get('lighting_info', {}).get('status', 'normal')
         
-        # Append to CSV with device information
+        # Append to CSV
         csv_saved = append_to_training_csv(
             metrics=training_metrics,
             lighting_condition=lighting,
             label=label,
-            csv_path="training_data/sample_data.csv",
-            device_manufacturer=device_manufacturer,
-            device_model=device_model,
-            device_os=device_os,
-            camera_megapixels=camera_megapixels
+            csv_path="training_data/sample_data.csv"
         )
         
         if csv_saved:

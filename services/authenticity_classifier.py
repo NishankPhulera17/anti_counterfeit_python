@@ -31,9 +31,10 @@ except ImportError:
 
 class AuthenticityClassifier:
     """
-    Classifier that uses 15 metrics to detect authentic prints vs duplicates.
+    Classifier that uses 15 base metrics + 4 derived features to detect authentic prints vs duplicates.
     
-    Input Features (15 metrics + lighting):
+    Input Features (19 features + lighting):
+    Base metrics (15):
     1. Sharpness
     2. Contrast
     3. HistogramPeak
@@ -49,6 +50,7 @@ class AuthenticityClassifier:
     13. HistogramEntropy
     14. DynamicRange
     15. Brightness
+    
     16. LightingCondition (encoded)
     """
     
@@ -65,7 +67,7 @@ class AuthenticityClassifier:
     # Lighting condition encoding
     LIGHTING_MAP = {'bright': 0, 'normal': 1, 'dim': 2, 'low': 3}
     
-    def __init__(self, model_type: str = 'random_forest', model_path: Optional[str] = None):
+    def __init__(self, model_type: str = 'xgboost', model_path: Optional[str] = None):
         """
         Initialize classifier.
         
@@ -147,12 +149,13 @@ class AuthenticityClassifier:
         Predict authenticity for a single image's metrics.
         
         Args:
-            metrics_dict: Dictionary with all 15 metrics + LightingCondition
+            metrics_dict: Dictionary with all 15 base metrics + LightingCondition
                 Example:
                 {
                     'Sharpness': 107.54,
                     'Contrast': 84.59,
                     'NoiseLevel': 2.00,
+                    'HighFreqEnergy': 2.36e10,
                     'LightingCondition': 'bright',
                     # ... all 15 metrics
                 }
@@ -174,19 +177,30 @@ class AuthenticityClassifier:
         features = self._prepare_features(metrics_dict)
         
         # Predict
-        prediction = self.model.predict(features.reshape(1, -1))[0]
+        prediction_raw = self.model.predict(features.reshape(1, -1))[0]
         probabilities = self.model.predict_proba(features.reshape(1, -1))[0]
         
-        # Get class labels
-        classes = self.model.classes_
-        proba_dict = {
-            str(classes[0]): float(probabilities[0]),
-            str(classes[1]): float(probabilities[1])
-        }
+        # Handle XGBoost numeric outputs vs Random Forest string outputs
+        if self.model_type == 'xgboost':
+            # XGBoost outputs: 0 = duplicate, 1 = real
+            reverse_label_encoder = {0: 'duplicate', 1: 'real'}
+            prediction = reverse_label_encoder.get(int(prediction_raw), 'duplicate')
+            # Probabilities are in order: [P(duplicate), P(real)]
+            proba_dict = {
+                'duplicate': float(probabilities[0]),
+                'real': float(probabilities[1])
+            }
+            is_authentic = (prediction == 'real') or (int(prediction_raw) == 1)
+        else:
+            # Random Forest outputs string labels
+            classes = self.model.classes_
+            prediction = str(prediction_raw)
+            proba_dict = {
+                str(classes[0]): float(probabilities[0]),
+                str(classes[1]): float(probabilities[1])
+            }
+            is_authentic = (prediction == 'real') or (prediction == 1)
         
-        # Determine which is 'real' and which is 'duplicate'
-        # Assuming classes are ['duplicate', 'real'] or ['real', 'duplicate']
-        is_authentic = (prediction == 'real') or (prediction == 1)
         confidence = max(probabilities) * 100
         
         return {
@@ -204,7 +218,7 @@ class AuthenticityClassifier:
         
         Args:
             training_data: List of dictionaries, each with:
-                - All 15 metrics
+                - All 15 base metrics
                 - 'LightingCondition': str
                 - 'Label': 'real' or 'duplicate'
             test_size: Fraction of data to use for testing
@@ -246,16 +260,33 @@ class AuthenticityClassifier:
             print(f"[INFO] Class distribution - Train: {np.bincount([1 if l == 'real' else 0 for l in y_train])}")
             print(f"[INFO] Class distribution - Test: {np.bincount([1 if l == 'real' else 0 for l in y_test])}")
         
+        # For XGBoost, encode string labels to numeric (0, 1)
+        # 'duplicate' -> 0, 'real' -> 1
+        if self.model_type == 'xgboost':
+            label_encoder = {'duplicate': 0, 'real': 1}
+            y_train_encoded = np.array([label_encoder.get(str(label).lower(), 0) for label in y_train])
+            y_test_encoded = np.array([label_encoder.get(str(label).lower(), 0) for label in y_test])
+        else:
+            y_train_encoded = y_train
+            y_test_encoded = y_test
+        
         # Train
         if verbose:
             print(f"[INFO] Training {self.model_type} model...")
         
-        self.model.fit(X_train, y_train)
+        self.model.fit(X_train, y_train_encoded)
         self.is_trained = True
         
         # Evaluate
-        y_pred = self.model.predict(X_test)
+        y_pred_encoded = self.model.predict(X_test)
         y_pred_proba = self.model.predict_proba(X_test)
+        
+        # For XGBoost, decode numeric predictions back to string labels
+        if self.model_type == 'xgboost':
+            reverse_label_encoder = {0: 'duplicate', 1: 'real'}
+            y_pred = np.array([reverse_label_encoder.get(int(pred), 'duplicate') for pred in y_pred_encoded])
+        else:
+            y_pred = y_pred_encoded
         
         results = {
             'train_size': len(X_train),
@@ -288,14 +319,22 @@ class AuthenticityClassifier:
         # ROC AUC if binary classification
         if len(np.unique(y_test)) == 2:
             try:
-                # Get probability of positive class (assuming 'real' is positive)
-                positive_class_idx = list(self.model.classes_).index('real') if 'real' in self.model.classes_ else 1
-                y_test_binary = (y_test == 'real').astype(int)
+                # Get probability of positive class (assuming 'real' is positive = 1)
+                if self.model_type == 'xgboost':
+                    # XGBoost: class 1 is 'real'
+                    positive_class_idx = 1
+                    y_test_binary = (y_test == 'real').astype(int)
+                else:
+                    # Random Forest: find index of 'real' class
+                    positive_class_idx = list(self.model.classes_).index('real') if 'real' in self.model.classes_ else 1
+                    y_test_binary = (y_test == 'real').astype(int)
                 auc = roc_auc_score(y_test_binary, y_pred_proba[:, positive_class_idx])
                 results['roc_auc'] = float(auc)
                 if verbose:
                     print(f"\nROC AUC: {auc:.4f}")
-            except:
+            except Exception as e:
+                if verbose:
+                    print(f"\n[WARNING] Could not calculate ROC AUC: {str(e)}")
                 pass
         
         return results
@@ -321,7 +360,7 @@ class AuthenticityClassifier:
         
         data = joblib.load(filepath)
         self.model = data['model']
-        self.model_type = data.get('model_type', 'random_forest')
+        self.model_type = data.get('model_type', 'xgboost')
         self.is_trained = True
         print(f"[INFO] Model loaded from {filepath}")
 
@@ -329,7 +368,7 @@ class AuthenticityClassifier:
 # Global instance (lazy loading)
 _classifier = None
 
-def get_classifier(model_type: str = 'random_forest', 
+def get_classifier(model_type: str = 'xgboost', 
                   model_path: Optional[str] = None) -> AuthenticityClassifier:
     """
     Get or create global classifier instance.
